@@ -233,7 +233,7 @@ limitations.  There is a high overhead with regard to each execution thread
 created; they require isolated buffers of memory for input and output and
 independent call stacks, which typically run many calls deep.  Furthermore,
 algorithms in the filters are optimized to iterate over sizable data
-chunks, which will not be the case with massive multithreading.  At some
+chunks, which will not be the case with massive multi-threading.  At some
 point the algorithms will have to be reengineered to process small data
 chunks or themselves be multithreaded.  It will be necessary to leverage a
 threading paradigm like the one proposed for this project to engineer this
@@ -249,7 +249,7 @@ are very similar in nature to the functors defined in this proposal.
 
 Although the main concerns addressed by of FEL, mesh flexibility and memory
 overhead, is complementary to this project, FEL does not adequately manage
-the complexity of massive multithreading.  To support pervasive parallelism
+the complexity of massive multi-threading.  To support pervasive parallelism
 we need to hide the complexity of work distribution.  Also, as the name
 implies, the Field Encapsulation Library is primarily concerned with
 defining, accessing, and operating on fields.  There is no mechanism for
@@ -293,7 +293,76 @@ topological, spatial, or temporal domains.  In contrast, our proposed
 system provides the primitives with which visualization and data analysis
 programmers are accustomed.
 
-\section{Errata}
+\section{Motivation}
+\label{sec:Motivation}
+
+
+As the scale of supercomputers has progressed from the teraflop to the
+petaflop we have enjoyed a resiliency of the message passing model
+(embodied in the use of MPI) as an effective means of attaining
+scalability.  However, as we consider the high performance computer of the
+future, the exascale machine, we discover that this parallelism model will
+no longer be sufficient.  All industry trends infer that the exascale
+machine will be built using many-core processors containing hundreds to
+thousands of cores per chip.  This change in processor design has dramatic
+effects on the design of large-scale parallel programs.  As stated by a
+recent study by the DARPA Information Processing Techniques
+Office\lcite{DARPAExascaleStudy}:
+
+\begin{quote}
+  The concurrency challenge is manifest in the need for software to expose
+  at least 1000$\times$ more concurrency in applications for Extreme Scale
+  systems, relative to current systems. It is further exacerbated by the
+  projected memory-computation imbalances in Extreme Scale systems, with
+  Bytes/Ops ratios that may drop to values as low as $10^{-2}$ where Bytes
+  and Ops represent the main memory and computation capacities of the
+  system respectively. These ratios will result in 100$\times$ reductions
+  in memory per core relative to Petascale systems, with accompanying
+  reductions in memory bandwidth per core.  Thus, a significant fraction of
+  software concurrency in Extreme Scale systems must come from exploiting
+  more parallelism within the computation performed on a single datum.
+\end{quote}
+
+Put simply, efficient parallelism on exascale machines requires a massive
+amount of concurrent threads, each performing many operations on a small
+and localized piece of data.
+
+Other studies concur.  The Workshop on Visual Analysis and Data Exploration
+at Extreme Scale\lcite{VisAnalysisExtremeScale} corroborates the need for
+``pervasive parallelism'' throughout visual analysis tools and that data
+access is a prime consideration for future tools.  The International
+Exascale Software Project's recent road map\lcite{ExascaleRoadMap} also
+states a required thousand fold increase in concurrency and that
+applications may require ten billion threads.  The road map also notes a
+change in I/O and Memory that will ``affect programming models and
+optimization.''  Careful consideration of memory access is also expected
+to have a dramatic effect on energy consumption as much of the power of an
+exascale system will be expended moving data.
+
+Will visualization systems need to run on these exascale systems?  They
+undoubtedly will.  Although it has been a common practice to use specialty
+high performance platforms for visualization and graphics~\lcite{Wylie01},
+this trend is coming to an end.  The cost of creating specialty
+visualization computers that are capable of analyzing data generated from
+large supercomputer runs is becoming prohibitive\lcite{Childs07}.
+Consequently, researchers are beginning to leverage the same supercomputers
+used for creating the data\lcite{Peterka09:SC,Peterka09:SciDAC,Yu08}.
+This, coupled with a renewed interest in running visualization
+\emph{in-situ} with simulations to overcome file I/O
+constraints\lcite{SNL092014,Tu06,Ross08}, ensures that high performance
+visualization code will run on the same technology as the simulation code
+for the foreseeable future.
+
+Visualization pipelines fit poorly into this massive concurrency model; the
+granularity of the pipeline computational unit, the filter, is too large.
+Each filter must ingest, process, and produce an entire data set when
+invoked.  Large scale parallelism today is achieved by replicating the
+pipeline and partitioning the input data amongst processes\lcite{Ahrens00}.
+However, extreme scale computers would require the data to be broken into
+billions of partitions.  The overhead of capturing the connectivity
+information between these partitions as well as the overhead of executing
+these large computation units on such small partitions of data is too great
+to make such an approach practical.
 
 To understand why, consider the sobering comparison between the
 Jaguar XT5 partition, a current petascale machine, and the projections for
@@ -301,12 +370,12 @@ an exascale machine given by the International Exascale Software Project
 RoadMap\lcite{ExascaleRoadMap} given in Table~\ref{table:PetaExaCompare}.
 Because processor clock rates are not increasing, an exascale computer
 requires a thousand-fold increase in the number of cores.  Furthermore,
-trends in processor design suggest that these cores must be hyperthreaded
+trends in processor design suggest that these cores must be hyper-threaded
 in order to keep them executing at full efficiency.  In all, to drive a
 complete exascale machine will require between one and 10 billion
 concurrently running threads.
 
-\begin{table}
+\begin{table}[htbp]
   \centering
   \caption{Comparison of characteristics between petascale and projected
     exascale machines.}
@@ -320,11 +389,10 @@ concurrently running threads.
   \end{tabular}
 \end{table}
 
-Consider the problems of running our current visualization tools.  Most of
-our current tools rely on MPI for concurrency.  An MPI process has the
-overhead of a running program with its own memory space.  A common process
-has an overhead of about twenty megabytes.  Running on the entirety of
-Jaguar yields an overhead of about 4 terabytes, less than two percent of
+Most of our current tools rely on MPI for concurrency.  An MPI process has
+the overhead of a running program with its own memory space.  A common
+process has an overhead of about twenty megabytes.  Running on the entirety
+of Jaguar yields an overhead of about 4 terabytes, less than two percent of
 the overall available memory.  In contrast, the overhead for using MPI
 processes for all the concurrency on an exascale machine requires up to 200
 petabytes, possibly exceeding the total memory on the system in overhead
@@ -332,16 +400,44 @@ alone.
 
 Even getting around problems with the overhead of MPI, the visualization
 pipeline still has scheduling problems at this level of concurrency.
-Consider using 
+Consider using Jaguar to process a one trillion cell mesh.  If we partition
+these cells evenly amongst all the cores where replicated pipelines will
+process each partition, that yields roughly 5 million cells per pipeline.
+General rules of thumb indicate this ratio is optimal for structured grids
+when running parallel VTK pipelines\sticky{Cite tutorial}.  Scaling to an
+exascale machine, we can project to processing 500 trillion cells
+(considering this is the expected growth in system memory).  If we
+partition these cells evenly amongst all the necessary cores where
+replicated pipelines will process each partition, that yields as few as 50
+thousand cells per pipeline.  Here we are starving our pipeline.
 
-HEREHEREHERE
+Even if we somehow avoid the problem of running on the largest exascale
+machines, the problem of a fundamental change in processor architecture
+persists.  The parallel visualization pipeline simply does not conform well
+to multi-core processors and many-core accelerators.  In response several
+researchers are pursing the idea of a \keyterm{hybrid parallel
+  pipeline}\sticky{cite algorithms, hank's volume rendering, streams...}.
+The hybrid parallel pipeline breaks the problem into two hierarchical
+levels.  The first level partitions the data amongst distributed memory
+nodes in the same way as the current parallel pipeline.  In the second
+level we run a threaded shared memory algorithm to take advantage of a
+multi- or many-core processor.
 
-The focus of this project is to design and implement a new
-framework for visualization.  The computational unit of this framework is a
-\keyterm{functor}, a single operation on a small piece of data.  Functors
-can be combined in much the same way as filters, but their light weight,
-lack of state, and small data access make them more suitable for the
-massive concurrency required by exascale computers.
+Although the current visualization pipeline does a good job in providing
+this first level of distributed memory concurrency, it provides no
+facilities whatsoever for this second layer of multi-threaded concurrency.
+This places the onus on each visualization pipeline filter developer.  That
+is, each filter must be independently and painstakingly designed to exploit
+concurrency and optimized for whatever architecture is used.  Even if this
+undertaking were to be performed, the concurrency is ultimately undermined
+at the connections of filters where execution threads must be synchronized
+and data combined.
+
+Our Dax toolkit is designed to encapsulate the complexity of multi-threaded
+visualization and data analysis algorithms.  Our initial implementation
+targets GPU architectures.  We feel that the idiosyncrasies of these
+accelerators, many threads with explicit memory locality, are
+representative of all future architectures.
 
 %% VGTC-specific section command.
 \acknowledgements{ASCR Attribution.

@@ -81,7 +81,21 @@
 %}
 
 %% Abstract section
-\abstract{ hello world }
+\abstract{ Experts agree that the exascale machine will comprise processors
+  that contain many cores, which in turn will necessitate a much higher
+  degree of parallelism.  Software will require a minimum of a 1000 times
+  more concurrency.  Most parallel analysis and visualization algorithms
+  today work by partitioning data and running mostly serial algorithms
+  concurrently on each data partition.  Although this approach lends itself
+  well to the parallelism of current high performance computing, it does
+  not exhibit the appropriate pervasive parallelism required for exascale
+  computing. The data partitions are too small and the overhead of the
+  threads too large to make effective use of all the cores in an extreme
+  scale machine.  This paper introduces a new visualization framework
+  designed to exhibit the pervasive parallelism necessary for extreme scale
+  machines.  We demonstrate the use of this system on a GPU processor,
+  which we feel is the best analog to an exascale node that we have
+  available today.  }
 
 %% ACM Computing Classification System (CCS). 
 %% See <http://www.acm.org/class/1998/> for details.
@@ -146,10 +160,13 @@
 \label{sec:Introduction}
 
 %% VGTC-specific section command.
-\acknowledgements{Sandia National Laboratories is a multi-program
-  laboratory operated by Sandia Corporation, a wholly owned subsidiary of
-  Lockheed Martin Corporation, for the U.S. Department of Energy's
-  National Nuclear Security Administration.}
+\acknowledgements{ASCR Attribution.
+
+  Part of this work was performed by Sandia National Laboratory.
+  Sandia National Laboratories is a multi-program laboratory operated by
+  Sandia Corporation, a wholly owned subsidiary of Lockheed Martin
+  Corporation, for the U.S. Department of Energy's National Nuclear
+  Security Administration.}
 
 %% \bibliographystyle{abbrv}
 %% \bibliography{DaxLDAV2011}

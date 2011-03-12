@@ -141,8 +141,6 @@
 
 \newcommand*{\keyterm}[1]{\emph{#1}}
 
-\newcommand*{\Oh}{\mathrm{O}}
-
 \newcommand{\sticky}[1]{{\color{red}\textsc{[#1]}}}
 
 \begin{document}
@@ -159,6 +157,90 @@
 %% \section{Introduction} 
 \label{sec:Introduction}
 
+Most of today's visualization libraries and applications are based off of
+what is known as the \keyterm{visualization
+  pipeline}\lcite{Haeberli88,Lucas92}.  The visualization pipeline is the
+key metaphor in many visualization development systems such as the
+Visualization Toolkit (VTK)\lcite{VTKBook}, SCIRun\lcite{SCIRunPaper}, the
+Application Visualization System (AVS)\lcite{AVSPaper},
+OpenDX\lcite{OpenDXPaper}, and Iris Explorer\lcite{IRISExplorerPaper}.  It
+is also the internal mechanism or external interface for may end-user
+visualization applications such as ParaView\lcite{ParaViewGuideBook},
+VisIt\lcite{VisItBook}, VisTrails\lcite{VisTrailsPaper},
+MayaVi\lcite{MayaViPaper}, VolView\lcite{VolViewBook},
+OsiriX\lcite{OsiriXPaper}, 3D Slicer\lcite{3DSlicerPaper}, and
+BioImageXD\lcite{BioImageXDPaper}.
+
+In the visualization pipeline model, algorithms are encapsulated as
+\keyterm{filter} components with inputs and outputs.  These filters can
+be combined by connecting the outputs of one filter to the inputs of
+another filter.  The visualization pipeline model is popular because it
+provides a convenient abstraction that allows users to combine algorithms
+in powerful ways.
+
+Although the visualization pipeline lends itself well to the concurrency of
+current high performance
+computing\lcite{Moreland08,Patchett09,Pugmire08,White05}, its structure
+prohibits the necessary extreme parallelism required for exascale
+computers.  This paper describes the design of the \keyterm{Dax toolkit} to
+perform Data Analysis at Extreme scales.  The computational unit of this
+framework is a \keyterm{functor}\sticky{Need to decide on nomenclature and
+  do search/replace.}, a single operation on a small piece of data.
+Functors can be combined in much the same way as filters, but their light
+weight, lack of state, and small data access make them more suitable for
+the massive concurrency required by exascale computers and associated
+multi- and many-core processors.
+
+\section{Errata}
+
+To understand why, consider the sobering comparison between the
+Jaguar XT5 partition, a current petascale machine, and the projections for
+an exascale machine given by the International Exascale Software Project
+RoadMap\lcite{ExascaleRoadMap} given in Table~\ref{table:PetaExaCompare}.
+Because processor clock rates are not increasing, an exascale computer
+requires a thousand-fold increase in the number of cores.  Furthermore,
+trends in processor design suggest that these cores must be hyperthreaded
+in order to keep them executing at full efficiency.  In all, to drive a
+complete exascale machine will require between one and 10 billion
+concurrently running threads.
+
+\begin{table}
+  \centering
+  \caption{Comparison of characteristics between petascale and projected
+    exascale machines.}
+  \label{table:PetaExaCompare}
+  \begin{tabular}{llll}
+    & Jaguar -- XT5 & Exascale & Increase \\
+    \hline
+    Cores & 224,256 & \parbox{.7in}{100 million\\ \hspace*{6pt} -- 1 billion} & $\sim{}1,000\times$ \\
+    Threads & 224,256 way & 1 -- 10 billion way & $\sim{}50,000\times$ \\
+    Memory & 300 Terabytes & 128 Petabytes & $\sim{}500\times$
+  \end{tabular}
+\end{table}
+
+Consider the problems of running our current visualization tools.  Most of
+our current tools rely on MPI for concurrency.  An MPI process has the
+overhead of a running program with its own memory space.  A common process
+has an overhead of about twenty megabytes.  Running on the entirety of
+Jaguar yields an overhead of about 4 terabytes, less than two percent of
+the overall available memory.  In contrast, the overhead for using MPI
+processes for all the concurrency on an exascale machine requires up to 200
+petabytes, possibly exceeding the total memory on the system in overhead
+alone.
+
+Even getting around problems with the overhead of MPI, the visualization
+pipeline still has scheduling problems at this level of concurrency.
+Consider using 
+
+HEREHEREHERE
+
+The focus of this project is to design and implement a new
+framework for visualization.  The computational unit of this framework is a
+\keyterm{functor}, a single operation on a small piece of data.  Functors
+can be combined in much the same way as filters, but their light weight,
+lack of state, and small data access make them more suitable for the
+massive concurrency required by exascale computers.
+
 %% VGTC-specific section command.
 \acknowledgements{ASCR Attribution.
 
@@ -168,7 +250,7 @@
   Corporation, for the U.S. Department of Energy's National Nuclear
   Security Administration.}
 
-%% \bibliographystyle{abbrv}
-%% \bibliography{DaxLDAV2011}
+\bibliographystyle{abbrv}
+\bibliography{DaxLDAV2011}
 
 \end{document}

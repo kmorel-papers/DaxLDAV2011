@@ -191,6 +191,108 @@ weight, lack of state, and small data access make them more suitable for
 the massive concurrency required by exascale computers and associated
 multi- and many-core processors.
 
+\section{Related Work}
+\label{sec:RelatedWork}
+
+Since its inception, many improvements have been made to the visualization
+pipeline to allow it to function well with large data.  By dividing tasks,
+pipelines, or data amongst processes, the serial algorithms of a
+visualization pipeline can work in parallel with little or no
+modification\lcite{Ahrens00}.  In particular, the data parallel
+mode, partitioning the data and replicating the pipeline, performs
+well on current high performance computers\lcite{Cedilnik06}.
+
+The basic function of a visualization pipeline is to process data flowing
+from upstream to downstream.  More recent visualization pipeline
+implementations, such as those in VTK, ParaView, and VisIt, implement more
+advanced control mechanisms and pass meta-data throughout the pipeline.
+These control mechanisms can, for example, subset the data in
+space\lcite{Childs05} or time\lcite{Biddiscombe07} based on the needs of
+the individual computing units.  Recent work is coupling this mechanism
+with query-driven visualization techniques\lcite{Gosink08} to better sift
+through large data sets with limited resources.
+
+These control mechanisms can also be used to stream data, in pieces,
+through the pipeline\lcite{Ahrens01}.  More recent advances allow us to
+prioritize the streaming, thus allowing to compensate for high latency of
+streaming by presenting the most relevant data first\lcite{Ahrens07}.  This
+in turn has lead to multi-resolution
+visualization\lcite{Pascucci01,Woodring09}.  Multiple resolutions further
+hide limited resource latency by first presenting low-detailed results and
+then iteratively refining them as needed.  This assumes, of course, that a
+multi-resolution hierarchy of data is already built (a non-trivial task for
+unstructured data).  This work is being implemented in a traditional
+visualization pipeline, but could be leveraged in many other types of
+frameworks, including the one proposed for this project.
+
+Another recent research project extends the visualization-pipeline
+streaming mechanism by automatically orchestrating task parallelism in
+independent components of the pipeline\lcite{Vo09}.  The technique adapts
+the visualization pipeline to multi-core processors, but it has its
+limitations.  There is a high overhead with regard to each execution thread
+created; they require isolated buffers of memory for input and output and
+independent call stacks, which typically run many calls deep.  Furthermore,
+algorithms in the filters are optimized to iterate over sizable data
+chunks, which will not be the case with massive multithreading.  At some
+point the algorithms will have to be reengineered to process small data
+chunks or themselves be multithreaded.  It will be necessary to leverage a
+threading paradigm like the one proposed for this project to engineer this
+kind of change on a full-featured toolkit.
+
+An alternative data analysis and visualization architecture is implemented
+by the Field Encapsulation Library (FEL)\lcite{FELPaper}.  FEL provides
+abstractions that allows programs to access the structure and fields of a
+mesh independently from the data storage.  More importantly, FEL uses C++
+template constructs to build functional definitions of fields.  These
+fields compute values on demand when requested.  These functional fields
+are very similar in nature to the functors defined in this proposal.
+
+Although the main concerns addressed by of FEL, mesh flexibility and memory
+overhead, is complementary to this project, FEL does not adequately manage
+the complexity of massive multithreading.  To support pervasive parallelism
+we need to hide the complexity of work distribution.  Also, as the name
+implies, the Field Encapsulation Library is primarily concerned with
+defining, accessing, and operating on fields.  There is no mechanism for
+topological operations that change or create meshes.  Nor is there any
+explicit method for aggregation.  In order to address the varied data
+analysis and visualization needs, this project enables these features.
+
+Another system with constructs similar to the framework proposed for this
+project is provided by Intel Threading Building Blocks (TBB)\lcite{TBB}, a
+popular open-source C++ library for multi-core programming.  In addition to
+high-level parallel constructs such as parallel looping and reduction
+operations, TBB also provides a simple pipeline execution environment.
+Like the system proposed for this project, TBB's pipeline mechanism
+partitions data based on available hardware threads, handing-off the
+resulting partitions to caller-supplied functors that each iterate over
+their assigned ranges to perform computation.  Thus, TBB provides a hybrid
+abstraction where callers are isolated from some of the complexity of
+scheduling work across multiple cores, but each functor is still
+responsible for iteration over its subset of the data.
+
+This approach is appropriate for current architectures where an individual
+host has a relatively small number of hardware threads, but requires that
+functor authors continue to deal with data organization and iteration
+issues on an ad-hoc basis.  Further, TBB does not address issues of
+scheduling or communication across multiple hosts in a distributed
+platform.  This proposal envisions a stricter separation of
+responsibilities where functors are responsible for computation only,
+leaving data retrieval and inter-processor communication to separate
+iterator components.
+
+The MapReduce programming model\lcite{MapReduce} is also similar in spirit
+to our proposed framework.  Like our approach, MapReduce simplifies
+parallel programming by defining algorithms in terms of local, stateless
+operations.  However MapReduce, not being designed as such, does not have
+all the conventions necessary for a fully featured visualization and data
+analysis library.  For example, expressing local topological connections
+(e.g. cells connected to vertices, vertices connected to cells, or cells
+connected to cells) are difficult to express.  The combining of predefined
+computation units is not directly supported, nor is the specification of
+topological, spatial, or temporal domains.  In contrast, our proposed
+system provides the primitives with which visualization and data analysis
+programmers are accustomed.
+
 \section{Errata}
 
 To understand why, consider the sobering comparison between the

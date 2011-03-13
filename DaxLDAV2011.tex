@@ -83,11 +83,11 @@
 %% Abstract section
 \abstract{ Experts agree that the exascale machine will comprise processors
   that contain many cores, which in turn will necessitate a much higher
-  degree of parallelism.  Software will require a minimum of a 1000 times
+  degree of concurrency.  Software will require a minimum of a 1000 times
   more concurrency.  Most parallel analysis and visualization algorithms
   today work by partitioning data and running mostly serial algorithms
   concurrently on each data partition.  Although this approach lends itself
-  well to the parallelism of current high performance computing, it does
+  well to the concurrency of current high performance computing, it does
   not exhibit the appropriate pervasive parallelism required for exascale
   computing. The data partitions are too small and the overhead of the
   threads too large to make effective use of all the cores in an extreme
@@ -181,7 +181,7 @@ in powerful ways.
 Although the visualization pipeline lends itself well to the concurrency of
 current high performance
 computing\lcite{Moreland08,Patchett09,Pugmire08,White05}, its structure
-prohibits the necessary extreme parallelism required for exascale
+prohibits the necessary extreme concurrency required for exascale
 computers.  This paper describes the design of the \keyterm{Dax toolkit} to
 perform Data Analysis at Extreme scales.  The computational unit of this
 framework is a \keyterm{functor}\sticky{Need to decide on nomenclature and
@@ -226,7 +226,7 @@ visualization pipeline, but could be leveraged in many other types of
 frameworks, including the one proposed for this project.
 
 Another recent research project extends the visualization-pipeline
-streaming mechanism by automatically orchestrating task parallelism in
+streaming mechanism by automatically orchestrating task concurrency in
 independent components of the pipeline\lcite{Vo09}.  The technique adapts
 the visualization pipeline to multi-core processors, but it has its
 limitations.  There is a high overhead with regard to each execution thread
@@ -301,7 +301,7 @@ As the scale of supercomputers has progressed from the teraflop to the
 petaflop we have enjoyed a resiliency of the message passing model
 (embodied in the use of MPI) as an effective means of attaining
 scalability.  However, as we consider the high performance computer of the
-future, the exascale machine, we discover that this parallelism model will
+future, the exascale machine, we discover that this concurrency model will
 no longer be sufficient.  All industry trends infer that the exascale
 machine will be built using many-core processors containing hundreds to
 thousands of cores per chip.  This change in processor design has dramatic
@@ -323,7 +323,7 @@ Office\lcite{DARPAExascaleStudy}:
   more parallelism within the computation performed on a single datum.
 \end{quote}
 
-Put simply, efficient parallelism on exascale machines requires a massive
+Put simply, efficient concurrency on exascale machines requires a massive
 amount of concurrent threads, each performing many operations on a small
 and localized piece of data.
 
@@ -356,7 +356,7 @@ for the foreseeable future.
 Visualization pipelines fit poorly into this massive concurrency model; the
 granularity of the pipeline computational unit, the filter, is too large.
 Each filter must ingest, process, and produce an entire data set when
-invoked.  Large scale parallelism today is achieved by replicating the
+invoked.  Large scale concurrency today is achieved by replicating the
 pipeline and partitioning the input data amongst processes\lcite{Ahrens00}.
 However, extreme scale computers would require the data to be broken into
 billions of partitions.  The overhead of capturing the connectivity
@@ -366,13 +366,13 @@ to make such an approach practical.
 
 To understand why, consider the sobering comparison between the
 Jaguar XT5 partition, a current petascale machine, and the projections for
-an exascale machine given by the International Exascale Software Project
+an exascale machine of by the International Exascale Software Project
 RoadMap\lcite{ExascaleRoadMap} given in Table~\ref{table:PetaExaCompare}.
 Because processor clock rates are not increasing, an exascale computer
 requires a thousand-fold increase in the number of cores.  Furthermore,
 trends in processor design suggest that these cores must be hyper-threaded
 in order to keep them executing at full efficiency.  In all, to drive a
-complete exascale machine will require between one and 10 billion
+complete exascale machine will require between one and ten billion
 concurrently running threads.
 
 \begin{table}[htbp]
@@ -399,7 +399,7 @@ petabytes, possibly exceeding the total memory on the system in overhead
 alone.
 
 Even getting around problems with the overhead of MPI, the visualization
-pipeline still has scheduling problems at this level of concurrency.
+pipeline still has inherent problems at this level of concurrency.
 Consider using Jaguar to process a one trillion cell mesh.  If we partition
 these cells evenly amongst all the cores where replicated pipelines will
 process each partition, that yields roughly 5 million cells per pipeline.

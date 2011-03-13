@@ -383,7 +383,7 @@ concurrently running threads.
   \begin{tabular}{llll}
     & Jaguar -- XT5 & Exascale & Increase \\
     \hline
-    Cores & 224,256 & \parbox{.7in}{100 million\\ \hspace*{6pt} -- 1 billion} & $\sim{}1,000\times$ \\
+    Cores & 224,256 & \parbox{.7in}{\vspace*{2pt}100 million\\ \hspace*{6pt} -- 1 billion\vspace*{2pt}} & $\sim{}1,000\times$ \\
     Threads & 224,256 way & 1 -- 10 billion way & $\sim{}50,000\times$ \\
     Memory & 300 Terabytes & 128 Petabytes & $\sim{}500\times$
   \end{tabular}
@@ -404,7 +404,7 @@ Consider using Jaguar to process a one trillion cell mesh.  If we partition
 these cells evenly amongst all the cores where replicated pipelines will
 process each partition, that yields roughly 5 million cells per pipeline.
 General rules of thumb indicate this ratio is optimal for structured grids
-when running parallel VTK pipelines\sticky{Cite tutorial}.  Scaling to an
+when running parallel VTK pipelines\lcite{ParaViewTutorial}.  Scaling to an
 exascale machine, we can project to processing 500 trillion cells
 (considering this is the expected growth in system memory).  If we
 partition these cells evenly amongst all the necessary cores where

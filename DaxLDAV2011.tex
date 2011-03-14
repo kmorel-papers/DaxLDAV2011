@@ -439,6 +439,37 @@ targets GPU architectures.  We feel that the idiosyncrasies of these
 accelerators, many threads with explicit memory locality, are
 representative of all future architectures.
 
+\section{System Overview}
+\label{sec:SystemOverview}
+
+According to the ExaScale Software Study performed by DARPA
+IPTO\lcite{DARPAExascaleStudy}, ``it is important to ensure that the
+intrinsic parallelism in a program can be expressed at the finest level
+possible \emph{e.g.}, at the statement or expression level, and that the
+compiler and runtime system can then exploit the subset of parallelism that
+is useful for a given target machine.''  Taking this advice to heart, we
+propose building a visualization framework using the functor as the basic
+computational unit.  A functor is an algorithm broken down to its finest
+level.  It operates on one datum and, when possible, generates one datum.
+A functor has no state; it operates only on the data it is given.
+
+Reducing visualization algorithms to this fine of a computational unit is
+feasible because of the embarrassingly parallel nature of most
+visualization algorithms.  We are exploiting the same algorithm properties
+that make the streaming and data parallelism approaches
+feasible\lcite{Ahrens00,Ahrens01}.  In essence, the operations of most
+visualization algorithms involve data at a single location in the mesh and
+its immediate neighborhood.  Hence, we can break the data down to the
+elemental pieces of the mesh.
+
+\sticky{Describe executive.}
+
+%% It is the visualization and data analysis programmer's responsibility to
+%% provide the implementation of a functor, which describes the behavior of
+%% the algorithm.  The Dax toolkit provides the \keyterm{executive}.  The
+%% executive applies functors to data sets.  Like the executive in the VTK
+%% pipeline, 
+
 %% VGTC-specific section command.
 \acknowledgements{ASCR Attribution.
 

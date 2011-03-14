@@ -430,12 +430,11 @@ machines, the problem of a fundamental change in processor architecture
 persists.  The parallel visualization pipeline simply does not conform well
 to multi-core processors and many-core accelerators.  In response several
 researchers are pursing the idea of a \keyterm{hybrid parallel
-  pipeline}\sticky{cite algorithms, hank's volume rendering, streams...}.
-The hybrid parallel pipeline breaks the problem into two hierarchical
-levels.  The first level partitions the data amongst distributed memory
-nodes in the same way as the current parallel pipeline.  In the second
-level we run a threaded shared memory algorithm to take advantage of a
-multi- or many-core processor.
+  pipeline}\lcite{Camp10,Howison11,Li08}.  The hybrid parallel pipeline
+breaks the problem into two hierarchical levels.  The first level
+partitions the data amongst distributed memory nodes in the same way as the
+current parallel pipeline.  In the second level we run a threaded shared
+memory algorithm to take advantage of a multi- or many-core processor.
 
 Although the current visualization pipeline does a good job in providing
 this first level of distributed memory concurrency, it provides no

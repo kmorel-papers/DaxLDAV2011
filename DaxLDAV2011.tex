@@ -178,7 +178,7 @@ key metaphor in many visualization development systems such as the
 Visualization Toolkit (VTK)\lcite{VTKBook}, SCIRun\lcite{SCIRunPaper}, the
 Application Visualization System (AVS)\lcite{AVSPaper},
 OpenDX\lcite{OpenDXPaper}, and Iris Explorer\lcite{IRISExplorerPaper}.  It
-is also the internal mechanism or external interface for may end-user
+is also the internal mechanism or external interface for many end-user
 visualization applications such as ParaView\lcite{ParaViewGuideBook},
 VisIt\lcite{VisItBook}, VisTrails\lcite{VisTrailsPaper},
 MayaVi\lcite{MayaViPaper}, VolView\lcite{VolViewBook},
@@ -261,7 +261,7 @@ template constructs to build functional definitions of fields.  These
 fields compute values on demand when requested.  These functional fields
 are very similar in nature to the functors defined in this proposal.
 
-Although the main concerns addressed by of FEL, mesh flexibility and memory
+Although the main concerns addressed by FEL, mesh flexibility and memory
 overhead, is complementary to this project, FEL does not adequately manage
 the complexity of massive multi-threading.  To support pervasive parallelism
 we need to hide the complexity of work distribution.  Also, as the name
@@ -475,7 +475,60 @@ visualization algorithms involve data at a single location in the mesh and
 its immediate neighborhood.  Hence, we can break the data down to the
 elemental pieces of the mesh.
 
-\sticky{Describe executive.}
+In this section we describe different components of the Dax framework. In our
+current implementation we use the GPU processor as an analog for the exascale
+node. We use OpenCL \ref{} to compile and execute functors on the GPU, however it must
+be noted that all the user-developed functor code is pure C99 \ref{} code and
+is independent of any GPGPU/OpenCL constructs, thus making it possible to port
+the functors to different computing languages based on C99 including CUDA
+\ref{}.
+
+Once we have analysis algorithms available as functors, the framework provides 
+mechanisms to connect these functors to form visualization pipelines. Since we
+decided to use GPUs as the analog to an exascale node available to us today, the
+framework also manages data movement and scheduling of the functors for
+executing on the GPU. Also, as is the case with any full-fledged visualization
+framework, we provide a data model. Data model essentially helps us
+define the model used to store data in memory for the system. 
+
+Dax toolkit provides two sets of APIs to developers and users.
+\begin {enumerate}
+\item \emph{sAPI - serial-API}: this is an API that is used on a node in an
+exascale machine to build the visualization pipeline, transfer data to and from
+IO devices, and schedule the parallel execution on the functors. It is a C++ API
+that is designed for users that want to use the Dax toolkit to analyze and
+visualize their data using provided functors.
+\item \emph{pAPI - parallel-API}: this is the API exposed to developers that
+write functors for different visualization algorithms. This API makes it easier
+to work on one datum while still conveniently accessing information such as
+connectivity and neighborhood needed by typical visualization algorithms. This a
+primarily a C99 API that makes it possible to compile the functors for
+existing GPU devices using OpenCL.
+\end {enumerate}
+
+\subsection{Data Model}
+
+The data model used by Dax framework is loosely based on OpenDX Data Model
+\ref{}. The data model makes it possible to describe data attributes defined on
+different kinds of grids including uniform rectilinear grids, curvilinear grids
+as well unstructured grids made up of triangles, quads, tetrahedra etc. Similar
+to OpenDX, the bulk of the data is encapsulated in array objects called
+\emph{daxArray}. Also, there are different types of arrays such as
+regular array, constant array, irregular array etc. that make it possible to
+compactly represent values in the array. A dataset comprises of a named
+collection of arrays with relationships between the arrays. There are two
+possible relationships between arrays:
+\begin{enumerate}
+\item \emph{"dep"} relationship records a dependency. Array A depends ("dep") on
+array B implies that A has exactly as many items as B and every item in A
+corresponds to an item in B.
+\item \emph{"ref"} relationship records a reference or indirection. Array A
+references ("ref") array B implies that values in A are references to value in
+B e.g. an array describing the cell connections between points references the
+"positions" array that defines the point coordinates.
+\end{enumerate}
+
+
 
 %% It is the visualization and data analysis programmer's responsibility to
 %% provide the implementation of a functor, which describes the behavior of

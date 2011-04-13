@@ -473,7 +473,8 @@ that make the streaming and data parallelism approaches
 feasible\lcite{Ahrens00,Ahrens01}.  In essence, the operations of most
 visualization algorithms involve data at a single location in the mesh and
 its immediate neighborhood.  Hence, we can break the data down to the
-elemental pieces of the mesh.
+elemental pieces of the mesh. 
+\sticky{We may replace this paragraph by section \ref{sec:ExecutionModel}}
 
 In this section we describe different components of the Dax framework. In our
 current implementation we use the GPU processor as an analog for the exascale
@@ -507,6 +508,7 @@ existing GPU devices using OpenCL.
 \end {enumerate}
 
 \subsection{Data Model}
+\label{sec:DataModel}
 
 The data model used by Dax framework is loosely based on OpenDX Data Model
 \ref{}. The data model makes it possible to describe data attributes defined on
@@ -528,6 +530,105 @@ B e.g. an array describing the cell connections between points references the
 "positions" array that defines the point coordinates.
 \end{enumerate}
 
+Figure \ref{} shows a representation for a dataset with cell and point
+attributes.
+
+\subsection{Execution Model}
+\label{sec:ExecutionModel}
+
+The execution model is based on the data flow paradigm. In a data-flow
+implementation, all nodes in the data-flow pipeline are pure stateless functions
+through which the data flows. Dax execution model is similar. It comprises of
+Modules (daxModule) that are connected together to form pipelines. The crux of
+the module i.e. the algorithm or the processing logic is the functor. A
+functor is C-function that takes processes input array(s) to generate output
+array(s). The module can be thought of as the wrapper around the functor that
+facilitates hooking up of these functors to form pipelines as well as provide
+support for type-checking and kernel generation for the executive. The Executive
+is a object that builds the data-flow pipeline and schedules its execution on
+the device. The complexity in the Executive stems from ensuring that the
+functors are executed in correct orders on the device.
+
+For our implementation, we are focusing on OpenCL. Thus the functor is written
+as an OpenCL function using dAPI (Device API) for accessing data (described
+later) (as against hAPI (host API) used by the C++ code to define functor
+modules and connect them together and execute the pipeline). The executive
+generates an OpenCL kernel to schedules the kernel for execution to produce the
+requested result.
+
+\subsection{pAPI - parallel API}
+
+The functor code uses this API to access the data, compute values and then
+produce the result. A functor is a simply a C-function that takes in input
+array(s) and producing an output array. pAPI adds annotations to the arguments
+making it possible to deduce relationships between the arguments e.g. the
+following code shows the prototype for a functor that takes in a position
+coordinates and point scalars to produce another set of point scalars.
+
+\small{
+\begin{verbatim}
+void PointFunctor(daxWork work,
+  const daxArray* __positions__ in_positions,
+  const daxArray* __dep__(__positions__) in_point_scalars,
+  daxArray* __dep__(__positions__) out_scalars)
+  {
+  daxFloat3 point_cordinate =
+    daxGetArrayValue3(work, in_positions);
+  daxFloat in_value =
+    daxGetArrayValue(work, in_point_scalar);
+  daxFloat out_value = ...;
+  daxSetArrayValue(work, out_scalars, out_value);
+  }
+\end{verbatim}
+}
+
+As is clear from the above code snippet, the functor code never directly access
+any memory locations. It uses the API to get and set values from arrays. Also
+the datum the operations are being performed on are identified by an opaque
+handle called daxWork. daxWork makes it possible for the framework to optimize
+reads and write to and from global memory.
+
+Following is the functor code used to compute cell-gradients. It demonstrates
+iterating over all the points in a cell and computing a derived quantity which
+is typical with many visualization algorithms.
+
+\small{
+\begin{verbatim}
+void CellGradient(const daxWork work,
+  const daxArray* __positions__ in_positions,
+  const daxArray*
+    __and__(__connections__, __ref__(in_positions))
+    in_connections,
+  const daxArray* __dep__(in_positions) inputArray,
+  daxArray* __dep__(in_connections) outputArray)
+{
+  daxConnectedComponent cell;
+  daxGetConnectedComponent(work, in_connections, &cell);
+
+  daxFloat scalars[MAX_CELL_POINTS];
+  uint num_elements = daxGetNumberOfElements(&cell);
+  daxWork point_work;
+  for (uint cc=0; cc < num_elements; cc++)
+    {
+    point_work = daxGetWorkForElement(&cell, cc);
+    scalars[cc] = daxGetArrayValue(point_work, inputArray);
+    }
+
+  daxFloat3 parametric_cell_center =
+    (daxFloat3)(0.5, 0.5, 0.5);
+  daxFloat3 gradient = daxGetCellDerivative(&cell,
+    0, parametric_cell_center, scalars);
+  daxSetArrayValue3(work, outputArray, gradient);
+}
+\end{verbatim}
+}
+
+Since the functor code never directly accessing memory, the framework is free to
+optimize the fetches and write-backs to global memory under the covers, avoiding
+global memory write all together for intermediate results in the pipeline.
+
+
+\subsection{sAPI - serial API}
 
 
 %% It is the visualization and data analysis programmer's responsibility to

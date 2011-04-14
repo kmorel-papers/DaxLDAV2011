@@ -38,7 +38,7 @@
 %% If you are submitting a paper to a conference for review with a double
 %% blind reviewing process, please replace the value ``0'' below with your
 %% OnlineID. Otherwise, you may safely leave it at ``0''.
-\onlineid{0}
+\onlineid{6}
 
 %% declare the category of your paper, only shown in review mode
 \vgtccategory{Research}
@@ -623,12 +623,81 @@ void CellGradient(const daxWork work,
 \end{verbatim}
 }
 
-Since the functor code never directly accessing memory, the framework is free to
+Since the functor code never directly accesses memory, the framework is free to
 optimize the fetches and write-backs to global memory under the covers, avoiding
 global memory write all together for intermediate results in the pipeline.
+Furthermore the design isolates the functor developers from changes to the
+underlying platform. For example, by simply providing CUDA based implementations
+for all the pAPI and updating the executive to use CUDA runtime components, we
+can port the entire framework to a CUDA platform instead of OpenCL.
 
+The annotations used in the arguments to the functors serve two purposes.
+First, it enables the functor developer to make certain assumptions about
+the arrays e.g. if an argument is marked as \emph{\_\_positions\_\_}, the
+array represents point coordinates with exactly 3 components.
+Second, it enables the sAPI (as explained the section \ref{sec:sAPI}) to validate
+the pipeline, catching any invalid connections before the job is dispatched to
+the parallel platform.
 
 \subsection{sAPI - serial API}
+\label{sec:sAPI}
+
+sAPI can be considered as the scaffolding interface that helps setting up the
+visualization pipeline. Each functor gets wrapped into a module (daxModule),
+with each array argument to the functor  becoming an input or an output port for
+the module. A pipeline in constructed by connecting the output ports to input
+ports on different modules. To execute the pipeline on calls
+Executive::Execute(). That results in first validating the pipeline ensuring
+that input port requirements are met. Second, a OpenCL kernel is generated that
+executes the entire pipeline on a datum. Finally, all the data arrays are
+uploaded to the device memory and the OpenCL kernel is triggered.
+
+The execution of the functors in the pipeline is demand driven, i.e. it is
+triggered by calling the last functor in the pipeline. The framework maintains
+the information of how each intermediate array is to be generated. When a
+functor makes a daxGetArrayValue* call, it checks if the value has been computed
+or available in global memory. If not, it executes the source-functor to produce
+the value implicitly.
+
+\section{Results}
+\label{sec:Results}
+
+Table \ref{tab:Results} compares the execution times for a simple pipeline
+Elevation$->$Cell Gradient applied to 256x256x256 block of 3D uniform
+rectilinear grid using NVIDIA GeForce 8800 GTX graphics card against a serial VTK-based
+implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
+
+\begin{table}[htbp]
+  \centering
+  \label{tab:Results}
+  \begin{tabular}{|l||c|}
+    \hline
+    Dax Execution Time & 0.72 s \\
+    \hline
+    VTK Total Time & 15.61 s \\
+    \hline
+    \hline
+    Speedup & 21.7 \\
+    \hline
+  \end{tabular}
+  \caption{Performance comparison between Dax toolkit and VTK}
+\end{table}
+
+We see that even with a simple pipeline involving just two functors, we can
+get a decent speed up.
+
+\section{Challenges Ahead}
+\label{sec:Challenges}
+
+In this paper we outlined our proposed framework and demonstrated the
+feasibility using functors that compute point scalars or generate derived cell
+quantities using cell geometry and topology. These cover a wide range of
+visualization and analysis algorithms however there still remain a set of
+algorithms such as clipping cells, iso-surfacing that remain to be addressed. In
+general, algorithms that change the topology or connectivity remain to be
+handled. The unique characteristic of such algorithms is that they cannot determine the
+number of elements a priori. We plan to address this issue using using multiple
+passes during the execution stage.
 
 
 %% It is the visualization and data analysis programmer's responsibility to

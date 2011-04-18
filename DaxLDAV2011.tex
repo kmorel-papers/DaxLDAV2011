@@ -489,7 +489,7 @@ mechanisms to connect these functors to form visualization pipelines. Since we
 decided to use GPUs as the analog to an exascale node available to us today, the
 framework also manages data movement and scheduling of the functors for
 executing on the GPU. Also, as is the case with any full-fledged visualization
-framework, we provide a data model. Data model essentially helps us
+framework, we provide a data model. The data model essentially helps us
 define the model used to store data in memory for the system. 
 
 Dax toolkit provides two sets of APIs to developers and users.
@@ -502,32 +502,32 @@ visualize their data using provided functors.
 \item \emph{pAPI - parallel-API}: this is the API exposed to developers that
 write functors for different visualization algorithms. This API makes it easier
 to work on one datum while still conveniently accessing information such as
-connectivity and neighborhood needed by typical visualization algorithms. This a
-primarily a C99 API that makes it possible to compile the functors for
+connectivity and neighborhood needed by typical visualization algorithms. This
+is a C99 API that makes it possible to compile the functors for
 existing GPU devices using OpenCL.
 \end {enumerate}
 
 \subsection{Data Model}
 \label{sec:DataModel}
 
-The data model used by Dax framework is loosely based on OpenDX Data Model
-\ref{}. The data model makes it possible to describe data attributes defined on
-different kinds of grids including uniform rectilinear grids, curvilinear grids
-as well unstructured grids made up of triangles, quads, tetrahedra etc. Similar
+The data model used by the Dax framework is loosely based on the OpenDX Data Model
+\ref{}. This data model makes it possible to describe data attributes defined on
+different kinds of grids including uniform rectilinear grids, curvilinear grids,
+and unstructured grids made up of triangles, quads, tetrahedra, etc. Similar
 to OpenDX, the bulk of the data is encapsulated in array objects called
 \emph{daxArray}. Also, there are different types of arrays such as
-regular array, constant array, irregular array etc. that make it possible to
-compactly represent values in the array. A dataset comprises of a named
+regular array, constant array, and irregular array that make it possible to
+compactly represent values in the array. A dataset comprises a named
 collection of arrays with relationships between the arrays. There are two
 possible relationships between arrays:
 \begin{enumerate}
-\item \emph{"dep"} relationship records a dependency. Array A depends ("dep") on
+\item \emph{``dep''} relationship records a dependency. Array A depends (``dep'') on
 array B implies that A has exactly as many items as B and every item in A
 corresponds to an item in B.
-\item \emph{"ref"} relationship records a reference or indirection. Array A
-references ("ref") array B implies that values in A are references to value in
+\item \emph{``ref''} relationship records a reference or indirection. Array A
+references (``ref'') array B implies that values in A are references to values in
 B e.g. an array describing the cell connections between points references the
-"positions" array that defines the point coordinates.
+``positions'' array that defines the point coordinates.
 \end{enumerate}
 
 Figure \ref{} shows a representation for a dataset with cell and point
@@ -536,11 +536,11 @@ attributes.
 \subsection{Execution Model}
 \label{sec:ExecutionModel}
 
-The execution model is based on the data flow paradigm. In a data-flow
+The execution model is based on the data-flow paradigm. In a data-flow
 implementation, all nodes in the data-flow pipeline are pure stateless functions
-through which the data flows. Dax execution model is similar. It comprises of
+through which the data flows. The Dax execution model is similar. It comprises
 Modules (daxModule) that are connected together to form pipelines. The crux of
-the module i.e. the algorithm or the processing logic is the functor. A
+the module (i.e. the algorithm or the processing logic) is the functor. A
 functor is C-function that takes processes input array(s) to generate output
 array(s). The module can be thought of as the wrapper around the functor that
 facilitates hooking up of these functors to form pipelines as well as provide
@@ -549,21 +549,20 @@ is a object that builds the data-flow pipeline and schedules its execution on
 the device. The complexity in the Executive stems from ensuring that the
 functors are executed in correct orders on the device.
 
-For our implementation, we are focusing on OpenCL. Thus the functor is written
-as an OpenCL function using dAPI (Device API) for accessing data (described
-later) (as against hAPI (host API) used by the C++ code to define functor
-modules and connect them together and execute the pipeline). The executive
-generates an OpenCL kernel to schedules the kernel for execution to produce the
-requested result.
+For our implementation, we are focusing on OpenCL. Thus the functor is
+written as an OpenCL function using dAPI (Device API) for accessing data
+(described later). The executive, accessed via OpenCL's hAPI (host API),
+generates an OpenCL kernel to schedules the kernel for execution to produce
+the requested result.
 
 \subsection{pAPI - parallel API}
 
-The functor code uses this API to access the data, compute values and then
+The functor code uses this API to access the data, compute values, and then
 produce the result. A functor is a simply a C-function that takes in input
-array(s) and producing an output array. pAPI adds annotations to the arguments
-making it possible to deduce relationships between the arguments e.g. the
+array(s) and produces an output array. pAPI adds annotations to the arguments
+making it possible to deduce relationships between the arguments. For example, the
 following code shows the prototype for a functor that takes in a position
-coordinates and point scalars to produce another set of point scalars.
+coordinate and point scalar to produce a new point scalar.
 
 {\small
 \begin{verbatim}
@@ -586,11 +585,11 @@ As is clear from the above code snippet, the functor code never directly access
 any memory locations. It uses the API to get and set values from arrays. Also
 the datum the operations are being performed on are identified by an opaque
 handle called daxWork. daxWork makes it possible for the framework to optimize
-reads and write to and from global memory.
+reads and writes to and from global memory.
 
-Following is the functor code used to compute cell-gradients. It demonstrates
-iterating over all the points in a cell and computing a derived quantity which
-is typical with many visualization algorithms.
+The following functor code computes cell-gradients. It demonstrates
+iterating over all the points in a cell and computing a derived quantity, which
+is typical of many visualization algorithms.
 
 {\small
 \begin{verbatim}
@@ -626,14 +625,14 @@ void CellGradient(const daxWork work,
 Since the functor code never directly accesses memory, the framework is free to
 optimize the fetches and write-backs to global memory under the covers, avoiding
 global memory write all together for intermediate results in the pipeline.
-Furthermore the design isolates the functor developers from changes to the
+Furthermore, the design isolates the functor developers from changes to the
 underlying platform. For example, by simply providing CUDA based implementations
 for all the pAPI and updating the executive to use CUDA runtime components, we
 can port the entire framework to a CUDA platform instead of OpenCL.
 
 The annotations used in the arguments to the functors serve two purposes.
 First, it enables the functor developer to make certain assumptions about
-the arrays e.g. if an argument is marked as \emph{\_\_positions\_\_}, the
+the arrays. For example, if an argument is marked as \emph{\_\_positions\_\_}, the
 array represents point coordinates with exactly 3 components.
 Second, it enables the sAPI (as explained the section \ref{sec:sAPI}) to validate
 the pipeline, catching any invalid connections before the job is dispatched to
@@ -645,14 +644,14 @@ the parallel platform.
 sAPI can be considered as the scaffolding interface that helps setting up the
 visualization pipeline. Each functor gets wrapped into a module (daxModule),
 with each array argument to the functor  becoming an input or an output port for
-the module. A pipeline in constructed by connecting the output ports to input
-ports on different modules. To execute the pipeline on calls
-Executive::Execute(). That results in first validating the pipeline ensuring
-that input port requirements are met. Second, a OpenCL kernel is generated that
+the module. A pipeline is constructed by connecting the output ports to input
+ports on different modules. To execute the pipeline, one calls
+Executive::Execute(). That results in first validating the pipeline to ensure
+that input port requirements are met. Second, an OpenCL kernel is generated that
 executes the entire pipeline on a datum. Finally, all the data arrays are
 uploaded to the device memory and the OpenCL kernel is triggered.
 
-The execution of the functors in the pipeline is demand driven, i.e. it is
+The execution of the functors in the pipeline is demand driven. That is, it is
 triggered by calling the last functor in the pipeline. The framework maintains
 the information of how each intermediate array is to be generated. When a
 functor makes a daxGetArrayValue* call, it checks if the value has been computed
@@ -707,7 +706,7 @@ passes during the execution stage.
 %% pipeline, 
 
 %% VGTC-specific section command.
-\acknowledgements{ASCR Attribution.
+\acknowledgements{\sticky{ASCR Attribution.}
 
   Part of this work was performed by Sandia National Laboratory.
   Sandia National Laboratories is a multi-program laboratory operated by

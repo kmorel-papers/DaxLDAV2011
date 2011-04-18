@@ -565,7 +565,7 @@ making it possible to deduce relationships between the arguments e.g. the
 following code shows the prototype for a functor that takes in a position
 coordinates and point scalars to produce another set of point scalars.
 
-\small{
+{\small
 \begin{verbatim}
 void PointFunctor(daxWork work,
   const daxArray* __positions__ in_positions,
@@ -592,7 +592,7 @@ Following is the functor code used to compute cell-gradients. It demonstrates
 iterating over all the points in a cell and computing a derived quantity which
 is typical with many visualization algorithms.
 
-\small{
+{\small
 \begin{verbatim}
 void CellGradient(const daxWork work,
   const daxArray* __positions__ in_positions,

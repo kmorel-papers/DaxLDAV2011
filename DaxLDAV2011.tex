@@ -155,7 +155,7 @@
 
 \newcommand*{\keyterm}[1]{\emph{#1}}
 
-\newcommand{\sticky}[1]{{\color{red}\textsc{[#1]}}}
+\newcommand{\fix}[1]{{\color{red}\textbf{\textsc{[#1]}}}}
 
 \begin{document}
 
@@ -198,7 +198,7 @@ computing\lcite{Moreland08,Patchett09,Pugmire08,White05}, its structure
 prohibits the necessary extreme concurrency required for exascale
 computers.  This paper describes the design of the \keyterm{Dax toolkit} to
 perform Data Analysis at Extreme scales.  The computational unit of this
-framework is a \keyterm{functor}\sticky{Need to decide on nomenclature and
+framework is a \keyterm{functor}\fix{Need to decide on nomenclature and
   do search/replace.}, a single operation on a small piece of data.
 Functors can be combined in much the same way as filters, but their light
 weight, lack of state, and small data access make them more suitable for
@@ -474,7 +474,7 @@ feasible\lcite{Ahrens00,Ahrens01}.  In essence, the operations of most
 visualization algorithms involve data at a single location in the mesh and
 its immediate neighborhood.  Hence, we can break the data down to the
 elemental pieces of the mesh. 
-\sticky{We may replace this paragraph by section \ref{sec:ExecutionModel}}
+\fix{We may replace this paragraph by section \ref{sec:ExecutionModel}}
 
 In this section we describe different components of the Dax framework. In our
 current implementation we use the GPU processor as an analog for the exascale
@@ -662,7 +662,7 @@ the value implicitly.
 \label{sec:Results}
 
 Table \ref{tab:Results} compares the execution times for a simple pipeline
-Elevation$->$Cell Gradient applied to 256x256x256 block of 3D uniform
+Elevation $\rightarrow$ Cell Gradient applied to 256x256x256 block of 3D uniform
 rectilinear grid using NVIDIA GeForce 8800 GTX graphics card against a serial VTK-based
 implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
 
@@ -706,9 +706,11 @@ passes during the execution stage.
 %% pipeline, 
 
 %% VGTC-specific section command.
-\acknowledgements{\sticky{ASCR Attribution.}
+\acknowledgements{This work was supported in full by the DOE Office of
+  Science, Advanced Scientific Computing Research, under award number
+  \fix{XXXXXX-XX-X-XXXX}, program manager Lucy Nowell.
 
-  Part of this work was performed by Sandia National Laboratory.
+  Part of this work was performed by Sandia National Laboratories.
   Sandia National Laboratories is a multi-program laboratory operated by
   Sandia Corporation, a wholly owned subsidiary of Lockheed Martin
   Corporation, for the U.S. Department of Energy's National Nuclear

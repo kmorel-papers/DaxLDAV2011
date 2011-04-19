@@ -481,7 +481,7 @@ node. We use OpenCL \ref{} to compile and execute worklets on the GPU, however i
 be noted that all the user-developed worklet code is pure C99 \ref{} code and
 is independent of any GPGPU/OpenCL constructs, thus making it possible to port
 the worklets to different computing languages based on C99 including CUDA
-\ref{}.
+\ref{}. \fix{Um, not sure CUDA actually supports full C99.  Can we just say the worklets are developed in standard (ANSI?) C?}
 
 Once we have analysis algorithms available as worklets, the framework provides 
 mechanisms to connect these worklets to form visualization pipelines. Since we
@@ -489,22 +489,38 @@ decided to use GPUs as the analog to an exascale node available to us today, the
 framework also manages data movement and scheduling of the worklets for
 executing on the GPU. Also, as is the case with any full-fledged visualization
 framework, we provide a data model. The data model essentially helps us
-define the model used to store data in memory for the system. 
+define the model used to store data in memory for the system.
 
-Dax toolkit provides two sets of APIs to developers and users.
-\begin {enumerate}
-\item \emph{sAPI - serial-API}: this is an API that is used on a node in an
-exascale machine to build the visualization pipeline, transfer data to and from
-IO devices, and schedule the parallel execution on the worklets. It is a C++ API
-that is designed for users that want to use the Dax toolkit to analyze and
-visualize their data using provided worklets.
-\item \emph{pAPI - parallel-API}: this is the API exposed to developers that
-write worklets for different visualization algorithms. This API makes it easier
-to work on one datum while still conveniently accessing information such as
+Dax toolkit provides two programming environments: one to develop new worklets and one to use the Dax system.
+
+\begin{description}
+\item[Execution Environment] This is the API exposed to developers that
+write worklets for different visualization algorithms. This API provides
+work for one datum with convenient access to information such as
 connectivity and neighborhood needed by typical visualization algorithms. This
 is a C99 API that makes it possible to compile the worklets for
 existing GPU devices using OpenCL.
-\end {enumerate}
+\item[Control Environment] This is an API that is used on a node in an
+exascale machine to build the visualization pipeline, transfer data to and from
+IO devices, and schedule the parallel execution on the worklets. It is a C++ API
+that is designed for users that want to use the Dax toolkit to analyze and
+visualize their data using provided or supplied worklets.
+\end{description}
+
+\begin{figure}
+  \centering
+  \includegraphics{images/DaxDiagram}
+  \caption{Layout of the Dax system.
+    Applications using Dax have a different programming and execution environment than the worklets.
+    The executive organizes the interaction between these two environments.}
+  \label{fig:DaxDiagram}
+\end{figure}
+
+The dual programming environments is partially a convenience to isolate the application from the execution of the worklets and is partially a necessity to support GPU languages with host and device environments.
+The Dax toolkit provides an object called an \keyterm{Executive} that acts as an interface between the control and execution environment.
+The executive accepts mesh data and execution requests from the application running in the control environment.
+Based on these requests, the executive builds worklet pipelines, manages memory, and schedules threads in the execution environment.
+The relationship between the control and execution environments and the executive's role in managing them is demonstrated in Figure~\ref{fig:DaxDiagram}.
 
 \subsection{Data Model}
 \label{sec:DataModel}
@@ -519,15 +535,15 @@ regular array, constant array, and irregular array that make it possible to
 compactly represent values in the array. A dataset comprises a named
 collection of arrays with relationships between the arrays. There are two
 possible relationships between arrays:
-\begin{enumerate}
-\item \emph{``dep''} relationship records a dependency. Array A depends (``dep'') on
+\begin{description}
+\item[dep] relationship records a dependency. Array A depends (``dep'') on
 array B implies that A has exactly as many items as B and every item in A
 corresponds to an item in B.
-\item \emph{``ref''} relationship records a reference or indirection. Array A
+\item[ref] relationship records a reference or indirection. Array A
 references (``ref'') array B implies that values in A are references to values in
 B e.g. an array describing the cell connections between points references the
 ``positions'' array that defines the point coordinates.
-\end{enumerate}
+\end{description}
 
 Figure \ref{} shows a representation for a dataset with cell and point
 attributes.
@@ -554,15 +570,17 @@ written as an OpenCL function using dAPI (Device API) for accessing data
 generates an OpenCL kernel to schedules the kernel for execution to produce
 the requested result.
 
-\subsection{pAPI - parallel API}
+\subsection{Execution Environment}
+\label{sec:ExecutionEnvironment}
 
 The worklet code uses this API to access the data, compute values, and then
 produce the result. A worklet is a simply a C-function that takes in input
-array(s) and produces an output array. pAPI adds annotations to the arguments
+array(s) and produces an output array. The execution environment adds annotations to the arguments
 making it possible to deduce relationships between the arguments. For example, the
 following code shows the prototype for a worklet that takes in a position
 coordinate and point scalar to produce a new point scalar.
 
+\fix{Don't worklets need a qualifier (formally \_\_functor\_\_) in their function definition?}
 {\small
 \begin{verbatim}
 void PointWorklet(daxWork work,
@@ -581,9 +599,9 @@ void PointWorklet(daxWork work,
 }
 
 As is clear from the above code snippet, the worklet code never directly access
-any memory locations. It uses the API to get and set values from arrays. Also
+any memory locations. It uses the API to get and set values from opaque types. Also,
 the datum the operations are being performed on are identified by an opaque
-handle called daxWork. daxWork makes it possible for the framework to optimize
+handle called daxWork. \fix{daxWork is kind of confusing given that the name worklet.  Perhaps it could be called something like daxElement.} daxWork makes it possible for the framework to optimize
 reads and writes to and from global memory.
 
 The following worklet code computes cell-gradients. It demonstrates
@@ -623,31 +641,31 @@ void CellGradient(const daxWork work,
 
 Since the worklet code never directly accesses memory, the framework is free to
 optimize the fetches and write-backs to global memory under the covers, avoiding
-global memory write all together for intermediate results in the pipeline.
+global memory writes all together for intermediate results in the pipeline.
 Furthermore, the design isolates the worklet developers from changes to the
 underlying platform. For example, by simply providing CUDA based implementations
-for all the pAPI and updating the executive to use CUDA runtime components, we
+for all execution environment and updating the executive to use CUDA runtime components, we
 can port the entire framework to a CUDA platform instead of OpenCL.
 
 The annotations used in the arguments to the worklets serve two purposes.
 First, it enables the worklet developer to make certain assumptions about
 the arrays. For example, if an argument is marked as \emph{\_\_positions\_\_}, the
 array represents point coordinates with exactly 3 components.
-Second, it enables the sAPI (as explained the section \ref{sec:sAPI}) to validate
+Second, it enables the control environment (as explained the section \ref{sec:ControlEnvironment}) to validate
 the pipeline, catching any invalid connections before the job is dispatched to
 the parallel platform.
 
-\subsection{sAPI - serial API}
-\label{sec:sAPI}
+\subsection{Control Environment}
+\label{sec:ControlEnvironment}
 
-sAPI can be considered as the scaffolding interface that helps setting up the
+The control environment can be considered the scaffolding interface that helps set up the
 visualization pipeline. Each worklet gets wrapped into a module (daxModule),
-with each array argument to the worklet  becoming an input or an output port for
+with each array argument to the worklet becoming an input or an output port for
 the module. A pipeline is constructed by connecting the output ports to input
 ports on different modules. To execute the pipeline, one calls
 Executive::Execute(). That results in first validating the pipeline to ensure
 that input port requirements are met. Second, an OpenCL kernel is generated that
-executes the entire pipeline on a datum. Finally, all the data arrays are
+executes the entire pipeline on a datum. Finally, the data arrays are
 uploaded to the device memory and the OpenCL kernel is triggered.
 
 The execution of the worklets in the pipeline is demand driven. That is, it is

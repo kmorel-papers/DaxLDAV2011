@@ -155,6 +155,8 @@
 
 \newcommand*{\keyterm}[1]{\emph{#1}}
 
+\newcommand{\etal}{et al.}
+
 \newcommand{\fix}[1]{{\color{red}\textbf{\textsc{[#1]}}}}
 
 \begin{document}
@@ -477,11 +479,11 @@ elemental pieces of the mesh.
 
 In this section we describe different components of the Dax framework. In our
 current implementation we use the GPU processor as an analog for the exascale
-node. We use OpenCL \ref{} to compile and execute worklets on the GPU, however it must
-be noted that all the user-developed worklet code is pure C99 \ref{} code and
+node. We use OpenCL\lcite{OpenCL} to compile and execute worklets on the GPU, however it must
+be noted that all the user-developed worklet code is pure C99\fix{site this} code and
 is independent of any GPGPU/OpenCL constructs, thus making it possible to port
-the worklets to different computing languages based on C99 including CUDA
-\ref{}. \fix{Um, not sure CUDA actually supports full C99.  Can we just say the worklets are developed in standard (ANSI?) C?}
+the worklets to different computing languages based on C99 including CUDA\lcite{CUDA}.
+\fix{Um, not sure CUDA actually supports full C99.  Can we just say the worklets are developed in standard (ANSI?) C?}
 
 Once we have analysis algorithms available as worklets, the framework provides 
 mechanisms to connect these worklets to form visualization pipelines. Since we
@@ -525,8 +527,9 @@ The relationship between the control and execution environments and the executiv
 \subsection{Data Model}
 \label{sec:DataModel}
 
-The data model used by the Dax framework is loosely based on the OpenDX Data Model
-\ref{}. This data model makes it possible to describe data attributes defined on
+The data model used by the Dax framework is loosely based on the OpenDX Data Model\lcite{OpenDXManual},
+which itself is based on the data model proposed by Haber \etal\scite{Haber1991}.
+This data model makes it possible to describe data attributes defined on
 different kinds of grids including uniform rectilinear grids, curvilinear grids,
 and unstructured grids made up of triangles, quads, tetrahedra, etc. Similar
 to OpenDX, the bulk of the data is encapsulated in array objects called
@@ -545,7 +548,7 @@ B e.g. an array describing the cell connections between points references the
 ``positions'' array that defines the point coordinates.
 \end{description}
 
-Figure \ref{} shows a representation for a dataset with cell and point
+Figure~\ref{}\fix{Make a figure} shows a representation for a dataset with cell and point
 attributes.
 
 \subsection{Execution Model}

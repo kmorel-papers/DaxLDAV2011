@@ -198,9 +198,8 @@ computing\lcite{Moreland08,Patchett09,Pugmire08,White05}, its structure
 prohibits the necessary extreme concurrency required for exascale
 computers.  This paper describes the design of the \keyterm{Dax toolkit} to
 perform Data Analysis at Extreme scales.  The computational unit of this
-framework is a \keyterm{functor}\fix{Need to decide on nomenclature and
-  do search/replace.}, a single operation on a small piece of data.
-Functors can be combined in much the same way as filters, but their light
+framework is a \keyterm{worklet}, a single operation on a small piece of data.
+Worklets can be combined in much the same way as filters, but their light
 weight, lack of state, and small data access make them more suitable for
 the massive concurrency required by exascale computers and associated
 multi- and many-core processors.
@@ -259,7 +258,7 @@ abstractions that allows programs to access the structure and fields of a
 mesh independently from the data storage.  More importantly, FEL uses C++
 template constructs to build functional definitions of fields.  These
 fields compute values on demand when requested.  These functional fields
-are very similar in nature to the functors defined in this proposal.
+are similar in nature to the worklets defined in our work.
 
 Although the main concerns addressed by FEL, mesh flexibility and memory
 overhead, is complementary to this project, FEL does not adequately manage
@@ -276,23 +275,23 @@ project is provided by Intel Threading Building Blocks (TBB)\lcite{TBB}, a
 popular open-source C++ library for multi-core programming.  In addition to
 high-level parallel constructs such as parallel looping and reduction
 operations, TBB also provides a simple pipeline execution environment.
-Like the system proposed for this project, TBB's pipeline mechanism
+Like Dax, TBB's pipeline mechanism
 partitions data based on available hardware threads, handing-off the
-resulting partitions to caller-supplied functors that each iterate over
+resulting partitions to caller-supplied functions that each iterate over
 their assigned ranges to perform computation.  Thus, TBB provides a hybrid
 abstraction where callers are isolated from some of the complexity of
-scheduling work across multiple cores, but each functor is still
+scheduling work across multiple cores, but each function is still
 responsible for iteration over its subset of the data.
 
 This approach is appropriate for current architectures where an individual
 host has a relatively small number of hardware threads, but requires that
-functor authors continue to deal with data organization and iteration
+function authors continue to deal with data organization and iteration
 issues on an ad-hoc basis.  Further, TBB does not address issues of
 scheduling or communication across multiple hosts in a distributed
-platform.  This proposal envisions a stricter separation of
-responsibilities where functors are responsible for computation only,
+platform.  Dax envisions a stricter separation of
+responsibilities where worklets are responsible for computation only,
 leaving data retrieval and inter-processor communication to separate
-iterator components.
+executive components.
 
 The MapReduce programming model\lcite{MapReduce} is also similar in spirit
 to our proposed framework.  Like our approach, MapReduce simplifies
@@ -461,10 +460,10 @@ intrinsic parallelism in a program can be expressed at the finest level
 possible \emph{e.g.}, at the statement or expression level, and that the
 compiler and runtime system can then exploit the subset of parallelism that
 is useful for a given target machine.''  Taking this advice to heart, we
-propose building a visualization framework using the functor as the basic
-computational unit.  A functor is an algorithm broken down to its finest
+propose building a visualization framework using the worklet as the basic
+computational unit.  A worklet is an algorithm broken down to its finest
 level.  It operates on one datum and, when possible, generates one datum.
-A functor has no state; it operates only on the data it is given.
+A worklet has no state; it operates only on the data it is given.
 
 Reducing visualization algorithms to this fine of a computational unit is
 feasible because of the embarrassingly parallel nature of most
@@ -478,16 +477,16 @@ elemental pieces of the mesh.
 
 In this section we describe different components of the Dax framework. In our
 current implementation we use the GPU processor as an analog for the exascale
-node. We use OpenCL \ref{} to compile and execute functors on the GPU, however it must
-be noted that all the user-developed functor code is pure C99 \ref{} code and
+node. We use OpenCL \ref{} to compile and execute worklets on the GPU, however it must
+be noted that all the user-developed worklet code is pure C99 \ref{} code and
 is independent of any GPGPU/OpenCL constructs, thus making it possible to port
-the functors to different computing languages based on C99 including CUDA
+the worklets to different computing languages based on C99 including CUDA
 \ref{}.
 
-Once we have analysis algorithms available as functors, the framework provides 
-mechanisms to connect these functors to form visualization pipelines. Since we
+Once we have analysis algorithms available as worklets, the framework provides 
+mechanisms to connect these worklets to form visualization pipelines. Since we
 decided to use GPUs as the analog to an exascale node available to us today, the
-framework also manages data movement and scheduling of the functors for
+framework also manages data movement and scheduling of the worklets for
 executing on the GPU. Also, as is the case with any full-fledged visualization
 framework, we provide a data model. The data model essentially helps us
 define the model used to store data in memory for the system. 
@@ -496,14 +495,14 @@ Dax toolkit provides two sets of APIs to developers and users.
 \begin {enumerate}
 \item \emph{sAPI - serial-API}: this is an API that is used on a node in an
 exascale machine to build the visualization pipeline, transfer data to and from
-IO devices, and schedule the parallel execution on the functors. It is a C++ API
+IO devices, and schedule the parallel execution on the worklets. It is a C++ API
 that is designed for users that want to use the Dax toolkit to analyze and
-visualize their data using provided functors.
+visualize their data using provided worklets.
 \item \emph{pAPI - parallel-API}: this is the API exposed to developers that
-write functors for different visualization algorithms. This API makes it easier
+write worklets for different visualization algorithms. This API makes it easier
 to work on one datum while still conveniently accessing information such as
 connectivity and neighborhood needed by typical visualization algorithms. This
-is a C99 API that makes it possible to compile the functors for
+is a C99 API that makes it possible to compile the worklets for
 existing GPU devices using OpenCL.
 \end {enumerate}
 
@@ -540,16 +539,16 @@ The execution model is based on the data-flow paradigm. In a data-flow
 implementation, all nodes in the data-flow pipeline are pure stateless functions
 through which the data flows. The Dax execution model is similar. It comprises
 Modules (daxModule) that are connected together to form pipelines. The crux of
-the module (i.e. the algorithm or the processing logic) is the functor. A
-functor is C-function that takes processes input array(s) to generate output
-array(s). The module can be thought of as the wrapper around the functor that
-facilitates hooking up of these functors to form pipelines as well as provide
+the module (i.e. the algorithm or the processing logic) is the worklet. A
+worklet is C-function that takes processes input array(s) to generate output
+array(s). The module can be thought of as the wrapper around the worklet that
+facilitates hooking up of these worklets to form pipelines as well as provide
 support for type-checking and kernel generation for the executive. The Executive
 is a object that builds the data-flow pipeline and schedules its execution on
 the device. The complexity in the Executive stems from ensuring that the
-functors are executed in correct orders on the device.
+worklets are executed in correct orders on the device.
 
-For our implementation, we are focusing on OpenCL. Thus the functor is
+For our implementation, we are focusing on OpenCL. Thus the worklet is
 written as an OpenCL function using dAPI (Device API) for accessing data
 (described later). The executive, accessed via OpenCL's hAPI (host API),
 generates an OpenCL kernel to schedules the kernel for execution to produce
@@ -557,16 +556,16 @@ the requested result.
 
 \subsection{pAPI - parallel API}
 
-The functor code uses this API to access the data, compute values, and then
-produce the result. A functor is a simply a C-function that takes in input
+The worklet code uses this API to access the data, compute values, and then
+produce the result. A worklet is a simply a C-function that takes in input
 array(s) and produces an output array. pAPI adds annotations to the arguments
 making it possible to deduce relationships between the arguments. For example, the
-following code shows the prototype for a functor that takes in a position
+following code shows the prototype for a worklet that takes in a position
 coordinate and point scalar to produce a new point scalar.
 
 {\small
 \begin{verbatim}
-void PointFunctor(daxWork work,
+void PointWorklet(daxWork work,
   const daxArray* __positions__ in_positions,
   const daxArray* __dep__(__positions__) in_point_scalars,
   daxArray* __dep__(__positions__) out_scalars)
@@ -581,13 +580,13 @@ void PointFunctor(daxWork work,
 \end{verbatim}
 }
 
-As is clear from the above code snippet, the functor code never directly access
+As is clear from the above code snippet, the worklet code never directly access
 any memory locations. It uses the API to get and set values from arrays. Also
 the datum the operations are being performed on are identified by an opaque
 handle called daxWork. daxWork makes it possible for the framework to optimize
 reads and writes to and from global memory.
 
-The following functor code computes cell-gradients. It demonstrates
+The following worklet code computes cell-gradients. It demonstrates
 iterating over all the points in a cell and computing a derived quantity, which
 is typical of many visualization algorithms.
 
@@ -622,16 +621,16 @@ void CellGradient(const daxWork work,
 \end{verbatim}
 }
 
-Since the functor code never directly accesses memory, the framework is free to
+Since the worklet code never directly accesses memory, the framework is free to
 optimize the fetches and write-backs to global memory under the covers, avoiding
 global memory write all together for intermediate results in the pipeline.
-Furthermore, the design isolates the functor developers from changes to the
+Furthermore, the design isolates the worklet developers from changes to the
 underlying platform. For example, by simply providing CUDA based implementations
 for all the pAPI and updating the executive to use CUDA runtime components, we
 can port the entire framework to a CUDA platform instead of OpenCL.
 
-The annotations used in the arguments to the functors serve two purposes.
-First, it enables the functor developer to make certain assumptions about
+The annotations used in the arguments to the worklets serve two purposes.
+First, it enables the worklet developer to make certain assumptions about
 the arrays. For example, if an argument is marked as \emph{\_\_positions\_\_}, the
 array represents point coordinates with exactly 3 components.
 Second, it enables the sAPI (as explained the section \ref{sec:sAPI}) to validate
@@ -642,8 +641,8 @@ the parallel platform.
 \label{sec:sAPI}
 
 sAPI can be considered as the scaffolding interface that helps setting up the
-visualization pipeline. Each functor gets wrapped into a module (daxModule),
-with each array argument to the functor  becoming an input or an output port for
+visualization pipeline. Each worklet gets wrapped into a module (daxModule),
+with each array argument to the worklet  becoming an input or an output port for
 the module. A pipeline is constructed by connecting the output ports to input
 ports on different modules. To execute the pipeline, one calls
 Executive::Execute(). That results in first validating the pipeline to ensure
@@ -651,11 +650,11 @@ that input port requirements are met. Second, an OpenCL kernel is generated that
 executes the entire pipeline on a datum. Finally, all the data arrays are
 uploaded to the device memory and the OpenCL kernel is triggered.
 
-The execution of the functors in the pipeline is demand driven. That is, it is
-triggered by calling the last functor in the pipeline. The framework maintains
+The execution of the worklets in the pipeline is demand driven. That is, it is
+triggered by calling the last worklet in the pipeline. The framework maintains
 the information of how each intermediate array is to be generated. When a
-functor makes a daxGetArrayValue* call, it checks if the value has been computed
-or available in global memory. If not, it executes the source-functor to produce
+worklet makes a daxGetArrayValue* call, it checks if the value has been computed
+or available in global memory. If not, it executes the source-worklet to produce
 the value implicitly.
 
 \section{Results}
@@ -682,14 +681,14 @@ implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
   \caption{Performance comparison between Dax toolkit and VTK}
 \end{table}
 
-We see that even with a simple pipeline involving just two functors, we can
+We see that even with a simple pipeline involving just two worklets, we can
 get a decent speed up.
 
 \section{Challenges Ahead}
 \label{sec:Challenges}
 
 In this paper we outlined our proposed framework and demonstrated the
-feasibility using functors that compute point scalars or generate derived cell
+feasibility using worklets that compute point scalars or generate derived cell
 quantities using cell geometry and topology. These cover a wide range of
 visualization and analysis algorithms however there still remain a set of
 algorithms such as clipping cells, iso-surfacing that remain to be addressed. In
@@ -700,9 +699,9 @@ passes during the execution stage.
 
 
 %% It is the visualization and data analysis programmer's responsibility to
-%% provide the implementation of a functor, which describes the behavior of
+%% provide the implementation of a worklet, which describes the behavior of
 %% the algorithm.  The Dax toolkit provides the \keyterm{executive}.  The
-%% executive applies functors to data sets.  Like the executive in the VTK
+%% executive applies worklets to data sets.  Like the executive in the VTK
 %% pipeline, 
 
 %% VGTC-specific section command.

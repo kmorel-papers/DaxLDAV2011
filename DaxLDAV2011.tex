@@ -484,13 +484,14 @@ be noted that all the user-developed worklet code is a subset of Standard C
 is independent of any GPGPU/OpenCL constructs, thus making it possible to port
 the worklets to different computing languages based on Standard C including CUDA\lcite{CUDA}.
 
-Once we have analysis algorithms available as worklets, the framework provides 
+With the analysis algorithms implemented as worklets, the framework provides 
 mechanisms to connect these worklets to form visualization pipelines. Since we
 decided to use GPUs as the analog to an exascale node available to us today, the
 framework also manages data movement and scheduling of the worklets for
 executing on the GPU. Also, as is the case with any full-fledged visualization
 framework, we provide a data model. The data model essentially helps us
-define the model used to store data in memory for the system.
+define the data-structures used to store data in memory for the system and
+semantics associated with them.
 
 Dax toolkit provides two programming environments: one to develop new worklets and one to use the Dax system.
 
@@ -499,7 +500,7 @@ Dax toolkit provides two programming environments: one to develop new worklets a
 write worklets for different visualization algorithms. This API provides
 work for one datum with convenient access to information such as
 connectivity and neighborhood needed by typical visualization algorithms. This
-is a C99 API that makes it possible to compile the worklets for
+is a Standard C API that makes it possible to compile the worklets for
 existing GPU devices using OpenCL.
 \item[Control Environment] This is an API that is used on a node in an
 exascale machine to build the visualization pipeline, transfer data to and from
@@ -517,11 +518,16 @@ visualize their data using provided or supplied worklets.
   \label{fig:DaxDiagram}
 \end{figure}
 
-The dual programming environments is partially a convenience to isolate the application from the execution of the worklets and is partially a necessity to support GPU languages with host and device environments.
-The Dax toolkit provides an object called an \keyterm{Executive} that acts as an interface between the control and execution environment.
-The executive accepts mesh data and execution requests from the application running in the control environment.
-Based on these requests, the executive builds worklet pipelines, manages memory, and schedules threads in the execution environment.
-The relationship between the control and execution environments and the executive's role in managing them is demonstrated in Figure~\ref{fig:DaxDiagram}.
+The dual programming environments is partially a convenience to isolate the
+application from the execution of the worklets and is partially a necessity to
+support GPU languages with host and device environments.  The Dax toolkit
+provides an object called an \keyterm{Executive} that acts as an interface
+between the control and execution environment.  The executive accepts mesh data
+and execution requests from the application running in the control environment.
+Based on these requests, the executive builds worklet pipelines, manages memory,
+and schedules threads in the execution environment.  The relationship between
+the control and execution environments and the executive's role in managing them
+is demonstrated in Figure~\ref{fig:DaxDiagram}.
 
 \subsection{Data Model}
 \label{sec:DataModel}
@@ -534,21 +540,21 @@ and unstructured grids made up of triangles, quads, tetrahedra, etc. Similar
 to OpenDX, the bulk of the data is encapsulated in array objects called
 \emph{daxArray}. Also, there are different types of arrays such as
 regular array, constant array, and irregular array that make it possible to
-compactly represent values in the array. A dataset comprises a named
+compactly represent values in the array. A dataset comprises of a named
 collection of arrays with relationships between the arrays. There are two
 possible relationships between arrays:
 \begin{description}
-\item[dep] relationship records a dependency. Array A depends (``dep'') on
+\item[dep] relationship records a dependency. Array A \emph{dep}ends on
 array B implies that A has exactly as many items as B and every item in A
 corresponds to an item in B.
 \item[ref] relationship records a reference or indirection. Array A
-references (``ref'') array B implies that values in A are references to values in
+\emph{ref}erences array B implies that values in A are references to values in
 B e.g. an array describing the cell connections between points references the
 ``positions'' array that defines the point coordinates.
 \end{description}
 
-Figure~\ref{}\fix{Make a figure} shows a representation for a dataset with cell and point
-attributes.
+Figure~\ref{}\fix{Make a figure} shows a representation for a dataset with cell
+and point attributes.
 
 \subsection{Execution Model}
 \label{sec:ExecutionModel}
@@ -556,19 +562,19 @@ attributes.
 The execution model is based on the data-flow paradigm. In a data-flow
 implementation, all nodes in the data-flow pipeline are pure stateless functions
 through which the data flows. The Dax execution model is similar. It comprises
-Modules (daxModule) that are connected together to form pipelines. The crux of
-the module (i.e. the algorithm or the processing logic) is the worklet. A
+of Modules (daxModule) that are connected together to form pipelines. The crux
+of the module (i.e. the algorithm or the processing logic) is the worklet. A
 worklet is C-function that takes processes input array(s) to generate output
 array(s). The module can be thought of as the wrapper around the worklet that
 facilitates hooking up of these worklets to form pipelines as well as provide
-support for type-checking and kernel generation for the executive. The Executive
-is a object that builds the data-flow pipeline and schedules its execution on
+support for type-checking and kernel generation. The Executive
+is an object that builds the data-flow pipeline and schedules its execution on
 the device. The complexity in the Executive stems from ensuring that the
 worklets are executed in correct orders on the device.
 
 For our implementation, we are focusing on OpenCL. Thus the worklet is
 written as an OpenCL function using dAPI (Device API) for accessing data
-(described later). The executive, accessed via OpenCL's hAPI (host API),
+(described later). The executive, accessed via OpenCL's host API,
 generates an OpenCL kernel to schedules the kernel for execution to produce
 the requested result.
 
@@ -582,10 +588,9 @@ making it possible to deduce relationships between the arguments. For example, t
 following code shows the prototype for a worklet that takes in a position
 coordinate and point scalar to produce a new point scalar.
 
-\fix{Don't worklets need a qualifier (formally \_\_functor\_\_) in their function definition?}
 {\small
 \begin{verbatim}
-void PointWorklet(daxWork work,
+__worklet__ void PointWorklet(daxWork work,
   const daxArray* __positions__ in_positions,
   const daxArray* __dep__(__positions__) in_point_scalars,
   daxArray* __dep__(__positions__) out_scalars)
@@ -612,7 +617,7 @@ is typical of many visualization algorithms.
 
 {\small
 \begin{verbatim}
-void CellGradient(const daxWork work,
+__worklet__ void CellGradient(const daxWork work,
   const daxArray* __positions__ in_positions,
   const daxArray*
     __and__(__connections__, __ref__(in_positions))
@@ -660,7 +665,7 @@ the parallel platform.
 \subsection{Control Environment}
 \label{sec:ControlEnvironment}
 
-The control environment can be considered the scaffolding interface that helps set up the
+The control environment can be considered as the scaffolding interface that helps set up the
 visualization pipeline. Each worklet gets wrapped into a module (daxModule),
 with each array argument to the worklet becoming an input or an output port for
 the module. A pipeline is constructed by connecting the output ports to input
@@ -673,9 +678,22 @@ uploaded to the device memory and the OpenCL kernel is triggered.
 The execution of the worklets in the pipeline is demand driven. That is, it is
 triggered by calling the last worklet in the pipeline. The framework maintains
 the information of how each intermediate array is to be generated. When a
-worklet makes a daxGetArrayValue* call, it checks if the value has been computed
-or available in global memory. If not, it executes the source-worklet to produce
-the value implicitly.
+worklet makes a daxGetArrayValue\textasteriskcentered~function call, it checks
+if the value has been computed or available in global memory. If not, it
+executes the source-worklet to produce the value implicitly. Likewise,
+daxSetArrayValue\textasteriskcentered~function calls don't necessarily result
+in a global memory write. If the array being written to an intermediate result
+i.e. result being passed from one worklet to another, then the value gets
+written in local memory and returned by the
+daxGetArrayValue\textasteriskcentered~ call that triggered the execution of the
+worklet. All this is happening under the covers without the worklet having to
+worry about any of these optimizations.
+
+Our current implementations don't store any intermediate values. Consequently if
+a worklet access the same input array location twice, then the producer worklet
+that generates that value is also executed twice. However, based on the
+platform, we can easily support sharing of intermediate results between worklet
+groups (called workgroups in OpenCL).
 
 \section{Results}
 \label{sec:Results}

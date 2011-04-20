@@ -475,15 +475,14 @@ feasible\lcite{Ahrens00,Ahrens01}.  In essence, the operations of most
 visualization algorithms involve data at a single location in the mesh and
 its immediate neighborhood.  Hence, we can break the data down to the
 elemental pieces of the mesh. 
-\fix{We may replace this paragraph by section \ref{sec:ExecutionModel}}
 
 In this section we describe different components of the Dax framework. In our
 current implementation we use the GPU processor as an analog for the exascale
 node. We use OpenCL\lcite{OpenCL} to compile and execute worklets on the GPU, however it must
-be noted that all the user-developed worklet code is pure C99\fix{site this} code and
+be noted that all the user-developed worklet code is a subset of Standard C
+\lcite{ANSIC} and
 is independent of any GPGPU/OpenCL constructs, thus making it possible to port
-the worklets to different computing languages based on C99 including CUDA\lcite{CUDA}.
-\fix{Um, not sure CUDA actually supports full C99.  Can we just say the worklets are developed in standard (ANSI?) C?}
+the worklets to different computing languages based on Standard C including CUDA\lcite{CUDA}.
 
 Once we have analysis algorithms available as worklets, the framework provides 
 mechanisms to connect these worklets to form visualization pipelines. Since we

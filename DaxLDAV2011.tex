@@ -410,6 +410,7 @@ concurrently running threads.
   \caption{Comparison of characteristics between petascale and projected
     exascale machines.}
   \label{table:PetaExaCompare}
+  \vspace{6pt}
   \begin{tabular}{llll}
     & Jaguar -- XT5 & Exascale & Increase \\
     \hline
@@ -738,18 +739,15 @@ implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
 
 \begin{table}[htbp]
   \centering
-  \label{tab:Results}
-  \begin{tabular}{|l||c|}
-    \hline
-    Dax Execution Time & 0.72 s \\
-    \hline
-    VTK Total Time & 15.61 s \\
-    \hline
-    \hline
-    Speedup & 21.7 \\
-    \hline
-  \end{tabular}
   \caption{Performance comparison between Dax toolkit and VTK}
+  \label{tab:Results}
+  \vspace{6pt}
+  \begin{tabular}{lccc}
+    Computation & VTK & Dax & Speedup \\
+    \hline
+    Elevation $\rightarrow$ Gradient, $256^3$ & 15.61 s & 0.72 s & 21.7
+    % More measurements go on new lines with no hline between them.
+  \end{tabular}
 \end{table}
 
 We see that even with a simple pipeline involving just two worklets, we can

@@ -52,7 +52,7 @@
 
 %% Paper title.
 
-\title{A Proposed Framework for Data Analysis and Visualization at Extreme Scale}
+\title{Dax Toolkit: A Proposed Framework for Data Analysis and Visualization at Extreme Scale}
 
 %% This is how authors are specified in the conference style
 
@@ -789,7 +789,7 @@ this with code for the same in Dax Toolkit
 \section{Challenges Ahead}
 \label{sec:Challenges}
 
-In this paper we outlined our proposed framework and demonstrated the
+In this paper we have outlined our proposed framework and demonstrated its
 feasibility using worklets that compute point scalars or generate derived cell
 quantities using cell geometry and topology. These cover a wide range of
 visualization and analysis algorithms however there still remain a set of
@@ -807,7 +807,7 @@ executive will then have to execute the two components in separate passes. This
 multipass approach is employed by existing implementations of marching
 cubes algorithm on the GPU using CUDA~\lcite{CudaMarchingCubes}.
 
-Another challenge is interworklet communication. Certain visualization
+Another challenge is inter-worklet communication. Certain visualization
 algorithms are not amenable to being parallelized without extensive 
 communication e.g. streamline generation. Although theoretically it is possible
 for worklets to communicate with each other using explicit synchronization

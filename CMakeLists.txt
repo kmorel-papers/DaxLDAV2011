@@ -6,6 +6,8 @@ include(UseLATEX.cmake)
 
 set(images
   images/DaxDiagram.pdf
+  images/DaxDataModel.png
+  images/DaxPipelineVsTraditionalPipeline.png
   )
 
 add_latex_document(DaxLDAV2011.tex

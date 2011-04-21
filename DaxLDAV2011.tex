@@ -205,6 +205,21 @@ Worklets can be combined in much the same way as filters, but their light
 weight, lack of state, and small data access make them more suitable for
 the massive concurrency required by exascale computers and associated
 multi- and many-core processors.
+Figure~\ref{fig:DaxPipelineVsTraditionalPipeline} highlights the difference
+between a Dax pipeline
+execution with a traditional visualization pipeline provided by existing
+visualization frameworks such as VTK.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=2.5in]{images/DaxPipelineVsTraditionalPipeline}
+  \caption{Comparison between Dax pipeline execution and traditional
+    visualization pipeline execution. Dax makes it possible to achieve higher
+    degree of concurrency by moving the iteration over mesh elements out of the
+    algorithm and letting the framework manage the parallelism.
+    \fix{Need highres image}}
+  \label{fig:DaxPipelineVsTraditionalPipeline}
+\end{figure}
 
 \section{Related Work}
 \label{sec:RelatedWork}
@@ -553,8 +568,16 @@ B e.g. an array describing the cell connections between points references the
 ``positions'' array that defines the point coordinates.
 \end{description}
 
-Figure~\ref{}\fix{Make a figure} shows a representation for a dataset with cell
+\begin{figure}
+  \centering
+  \includegraphics[width=2.5in]{images/DaxDataModel}
+  \caption{Example of a dataset with a point and cell scalars.}
+  \label{fig:DaxDataModel}
+\end{figure}
+
+Figure~\ref{fig:DaxDataModel} shows a representation for a dataset with cell
 and point attributes.
+
 
 \subsection{Execution Model}
 \label{sec:ExecutionModel}

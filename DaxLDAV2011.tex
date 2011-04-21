@@ -271,8 +271,8 @@ hide limited resource latency by first presenting low-detailed results and
 then iteratively refining them as needed.  This assumes, of course, that a
 multi-resolution hierarchy of data is already built (a non-trivial task for
 unstructured data).  This work is being implemented in a traditional
-visualization pipeline, but could be leveraged in many other types of
-frameworks, including the one proposed for this project.
+visualization pipeline, but could potentially be leveraged in many other
+types of frameworks, including Dax.
 
 Another recent research project extends the visualization-pipeline
 streaming mechanism by automatically orchestrating task concurrency in
@@ -285,8 +285,8 @@ algorithms in the filters are optimized to iterate over sizable data
 chunks, which will not be the case with massive multi-threading.  At some
 point the algorithms will have to be reengineered to process small data
 chunks or themselves be multithreaded.  It will be necessary to leverage a
-threading paradigm like the one proposed for this project to engineer this
-kind of change on a full-featured toolkit.
+threading paradigm like the one proposed for Dax to engineer this kind of
+change on a full-featured toolkit.
 
 An alternative data analysis and visualization architecture is implemented
 by the Field Encapsulation Library (FEL)\lcite{FELPaper}.  FEL provides
@@ -297,17 +297,18 @@ fields compute values on demand when requested.  These functional fields
 are similar in nature to the worklets defined in our work.
 
 Although the main concerns addressed by FEL, mesh flexibility and memory
-overhead, is complementary to this project, FEL does not adequately manage
+overhead, is Dax, FEL does not adequately manage
 the complexity of massive multi-threading.  To support pervasive parallelism
 we need to hide the complexity of work distribution.  Also, as the name
 implies, the Field Encapsulation Library is primarily concerned with
 defining, accessing, and operating on fields.  There is no mechanism for
 topological operations that change or create meshes.  Nor is there any
 explicit method for aggregation.  In order to address the varied data
-analysis and visualization needs, this project enables these features.
+analysis and visualization needs, the Dax project will soon address these
+features. 
 
-Another system with constructs similar to the framework proposed for this
-project is provided by Intel Threading Building Blocks (TBB)\lcite{TBB}, a
+Another system with constructs similar to Dax
+is provided by Intel Threading Building Blocks (TBB)\lcite{TBB}, a
 popular open-source C++ library for multi-core programming.  In addition to
 high-level parallel constructs such as parallel looping and reduction
 operations, TBB also provides a simple pipeline execution environment.
@@ -774,7 +775,7 @@ get a decent speed up.
 The code that developer writes in the worklet is comparable to the code
 one would write to do the something similar in existing visualization frameworks
 such as VTK. Figure~\ref{fig:DaxVTKCompare} compares the code used in Dax
-to compute cell gradients and a code snipped for computing cell gradients
+to compute cell gradients and a code snippet for computing cell gradients
 in VTK's vtkCellDerivatives filter.  This comparison clearly shows that,
 apart from minor syntactic differences, the code for the two is nearly
 identical (although Dax is currently missing a convenience function for

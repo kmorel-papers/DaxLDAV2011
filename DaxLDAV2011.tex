@@ -30,6 +30,7 @@
 \usepackage{mathptmx}
 \usepackage{graphicx}
 \usepackage{times}
+\usepackage{url}
 
 %% We encourage the use of mathptmx for consistent usage of times font
 %% throughout the proceedings. However, if you encounter conflicts
@@ -795,11 +796,28 @@ feasibility using worklets that compute point scalars or generate derived cell
 quantities using cell geometry and topology. These cover a wide range of
 visualization and analysis algorithms however there still remain a set of
 algorithms such as clipping cells, iso-surfacing that remain to be addressed. In
-general, algorithms that change the topology or connectivity remain to be
-handled. The unique characteristic of such algorithms is that they cannot determine the
-number of elements a priori. We plan to address this issue using using multiple
-passes during the execution stage.
+general, algorithms that change the topology or connectivity have not been
+discussed. The unique characteristic of such algorithms is that they cannot
+determine the number of elements a priori. Unlike traditional filters, a
+worklet has no explicit memory management or control capabilities. Using the
+information provided by the annotations, the executive deduces the memory
+requirements and allocates appropriate buffers. Since that's no longer possible
+for topology changing algorithms, it becomes essential that such worklets are
+split into at least two components: one computing the number of elements being
+generated and the second doing the actual work to generate the new elements. The
+executive will then have to execute the two components in separate passes. This
+multipass approach is employed by existing implementations of marching
+cubes algorithm on the GPU using CUDA~\lcite{CudaMarchingCubes}.
 
+Another challenge is interworklet communication. Certain visualization
+algorithms are not amenable to being parallelized without extensive 
+communication e.g. streamline generation. Although theoretically it is possible
+for worklets to communicate with each other using explicit synchronization
+mechanisms it can affect the performance drastically. As framework designers, we
+either have to bite the bullet and support such algorithms or provide
+alternatives. For example, although streamline tracing is not easily parallelizable,
+line integral convolution~\lcite{SurfaceLIC} can be suggested as parallel
+alternative for analyzing vector fields.
 
 %% It is the visualization and data analysis programmer's responsibility to
 %% provide the implementation of a worklet, which describes the behavior of

@@ -673,6 +673,9 @@ __worklet__ void CellGradient(const daxWork work,
   const daxArray* __dep__(in_positions) inputArray,
   daxArray* __dep__(in_connections) outputArray)
 {
+  daxFloat3 parametric_cell_center =
+    (daxFloat3)(0.5, 0.5, 0.5);
+
   daxConnectedComponent cell;
   daxGetConnectedComponent(work, in_connections, &cell);
 
@@ -686,8 +689,6 @@ __worklet__ void CellGradient(const daxWork work,
       = daxGetArrayValue(point_work, inputArray);
     }
 
-  daxFloat3 parametric_cell_center =
-    (daxFloat3)(0.5, 0.5, 0.5);
   daxFloat3 gradient = daxGetCellDerivative(&cell,
     0, parametric_cell_center, scalars);
   daxSetArrayValue3(work, outputArray, gradient);
@@ -772,12 +773,43 @@ get a decent speed up.
 
 The code that developer writes in the worklet is comparable to the code
 one would write to do the something similar in existing visualization frameworks
-such as VTK. Figure~\ref{fig:VTKCellGradient} shows a code snippet for computing
-cell gradients in VTK's vtkCellDerivatives filter.
+such as VTK. Figure~\ref{fig:DaxVTKCompare} compares the code used in Dax
+to compute cell gradients and a code snipped for computing cell gradients
+in VTK's vtkCellDerivatives filter.  This comparison clearly shows that,
+apart from minor syntactic differences, the code for the two is nearly
+identical (although Dax is currently missing a convenience function for
+getting all scalars in a cell that is available in VTK).
 
-\begin{figure}[htbp]
-\centering
-\begin{lstlisting}[language=C++]
+\begin{figure*}
+  \centering
+  \begin{minipage}[t]{.49\linewidth}
+    \begin{lstlisting}[language=Dax]
+__worklet__ void CellGradient(...)
+{
+  daxFloat3 parametric_cell_center =
+    (daxFloat3)(0.5, 0.5, 0.5);
+
+
+
+  daxConnectedComponent cell;
+  daxGetConnectedComponent(work, in_connections, &cell);
+  daxFloat scalars[MAX_CELL_POINTS];
+  uint num_elements = daxGetNumberOfElements(&cell);
+  daxWork point_work;
+  for (uint cc=0; cc < num_elements; cc++)
+    {
+    point_work = daxGetWorkForElement(&cell, cc);
+    scalars[cc]
+      = daxGetArrayValue(point_work, inputArray);
+    }
+  daxFloat3 gradient = daxGetCellDerivative(&cell,
+    0, parametric_cell_center, scalars);
+  daxSetArrayValue3(work, outputArray, gradient);
+}
+    \end{lstlisting}
+  \end{minipage}
+  \begin{minipage}[t]{.49\linewidth}
+    \begin{lstlisting}[language=C++]
 int vtkCellDerivatives::RequestData(...)
 {
   ...[allocate output arrays]...
@@ -789,17 +821,27 @@ int vtkCellDerivatives::RequestData(...)
     subId = cell->GetParametricCenter(pcoords);
     inScalars->GetTuples(cell->PointIds, cellScalars);
     scalars = cellScalars->GetPointer(0);
+
+
+
+
+
+
+
     cell->Derivatives(subId,pcoords,scalars,1,derivs);
+
     outGradients->SetTuple(cellId, derivs);
     }
   ...[cleanup]...
 }
-\end{lstlisting}
-\caption{Code to compute cell gradients in VTK (vtkCellDerivatives). Compare
-this with code for the same in Dax Toolkit
-(Figure~\ref{fig:DaxCellGradientWorklet}).}
-\label{fig:VTKCellGradient}
-\end{figure}
+    \end{lstlisting}
+  \end{minipage}
+  \caption{Comparison of code to compute call gradients in Dax (repeated
+    from Figure~\ref{fig:DaxCellGradientWorklet}) on the left and the
+    equivalent code in VTK (from the vtkCellDerivatives class) on the
+    right.}
+  \label{fig:DaxVTKCompare}
+\end{figure*}
 
 \section{Challenges Ahead}
 \label{sec:Challenges}

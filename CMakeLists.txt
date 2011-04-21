@@ -6,7 +6,7 @@ include(UseLATEX.cmake)
 
 set(images
   images/DaxDiagram.pdf
-  images/DaxDataModel.png
+  images/DaxDataModel.pdf
   images/DaxPipelineVsTraditionalPipeline.pdf
   )
 

@@ -555,7 +555,7 @@ and unstructured grids made up of triangles, quads, tetrahedra, etc. Similar
 to OpenDX, the bulk of the data is encapsulated in array objects called
 \emph{daxArray}. Also, there are different types of arrays such as
 regular array, constant array, and irregular array that make it possible to
-compactly represent values in the array. A dataset comprises of a named
+compactly represent values in the array. A dataset comprises a named
 collection of arrays with relationships between the arrays. There are two
 possible relationships between arrays:
 \begin{description}
@@ -585,7 +585,7 @@ and point attributes.
 The execution model is based on the data-flow paradigm. In a data-flow
 implementation, all nodes in the data-flow pipeline are pure stateless functions
 through which the data flows. The Dax execution model is similar. It comprises
-of Modules (daxModule) that are connected together to form pipelines. The crux
+Modules (daxModule) that are connected together to form pipelines. The crux
 of the module (i.e. the algorithm or the processing logic) is the worklet. A
 worklet is C-function that takes processes input array(s) to generate output
 array(s). The module can be thought of as the wrapper around the worklet that

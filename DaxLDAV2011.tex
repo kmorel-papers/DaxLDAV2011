@@ -637,7 +637,7 @@ coordinates to generate point scalars.}
 As is clear from the above code snippet, the worklet code never directly access
 any memory locations. It uses the API to get and set values from opaque types. Also,
 the datum the operations are being performed on are identified by an opaque
-handle called daxWork. \fix{daxWork is kind of confusing given that the name worklet.  Perhaps it could be called something like daxElement.} daxWork makes it possible for the framework to optimize
+handle called daxWork. daxWork makes it possible for the framework to optimize
 reads and writes to and from global memory.
 
 The following worklet code computes cell-gradients. It demonstrates

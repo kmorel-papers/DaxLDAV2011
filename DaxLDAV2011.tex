@@ -588,6 +588,8 @@ making it possible to deduce relationships between the arguments. For example, t
 following code shows the prototype for a worklet that takes in a position
 coordinate and point scalar to produce a new point scalar.
 
+\begin{figure}[htbp]
+\centering
 {\small
 \begin{verbatim}
 __worklet__ void PointWorklet(daxWork work,
@@ -604,6 +606,10 @@ __worklet__ void PointWorklet(daxWork work,
   }
 \end{verbatim}
 }
+\caption{Pseudo-code for a worklet operating on input point scalars and point
+coordinates to generate point scalars.}
+\label{fig:DaxPointWorklet}
+\end{figure}
 
 As is clear from the above code snippet, the worklet code never directly access
 any memory locations. It uses the API to get and set values from opaque types. Also,
@@ -615,6 +621,8 @@ The following worklet code computes cell-gradients. It demonstrates
 iterating over all the points in a cell and computing a derived quantity, which
 is typical of many visualization algorithms.
 
+\begin{figure}[htbp]
+\centering
 {\small
 \begin{verbatim}
 __worklet__ void CellGradient(const daxWork work,
@@ -643,8 +651,10 @@ __worklet__ void CellGradient(const daxWork work,
     0, parametric_cell_center, scalars);
   daxSetArrayValue3(work, outputArray, gradient);
 }
-\end{verbatim}
-}
+\end{verbatim} }
+\caption{Worklet for computing cell gradients in Dax Execution environment.}
+\label{fig:DaxCellGradientWorklet}
+\end{figure}
 
 Since the worklet code never directly accesses memory, the framework is free to
 optimize the fetches and write-backs to global memory under the covers, avoiding
@@ -721,6 +731,39 @@ implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
 
 We see that even with a simple pipeline involving just two worklets, we can
 get a decent speed up.
+
+The code that developer writes in the worklet is comparable to the code
+one would write to do the something similar in existing visualization frameworks
+such as VTK. Figure~\ref{fig:VTKCellGradient} shows a code snippet for computing
+cell gradients in VTK's vtkCellDerivatives filter.
+
+\begin{figure}[htbp]
+\centering
+{\small
+\begin{verbatim}
+int vtkCellDerivatives::RequestData(...)
+{
+  ...[allocate output arrays]...
+  ...[validate inputs]...
+  for (cellId=0; cellId < numCells; cellId++)
+    {
+    ...
+    input->GetCell(cellId, cell);
+    subId = cell->GetParametricCenter(pcoords);
+    inScalars->GetTuples(cell->PointIds, cellScalars);
+    scalars = cellScalars->GetPointer(0);
+    cell->Derivatives(subId, pcoords, scalars, 1, derivs);
+    outGradients->SetTuple(cellId, derivs);
+    }
+  ...[cleanup]...
+}
+\end{verbatim}
+}
+\caption{Code to compute cell gradients in VTK (vtkCellDerivatives). Compare
+this with code for the same in Dax Toolkit
+(Figure~\ref{fig:DaxCellGradientWorklet}).}
+\label{fig:VTKCellGradient}
+\end{figure}
 
 \section{Challenges Ahead}
 \label{sec:Challenges}

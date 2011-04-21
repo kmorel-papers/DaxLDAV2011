@@ -143,7 +143,26 @@
 \definecolor{yellow}{rgb}{1,1,0}
 \definecolor{black}{rgb}{0,0,0}
 \definecolor{ltcyan}{rgb}{.75,1,1}
+\definecolor{blue}{rgb}{0,0,1}
 \definecolor{red}{rgb}{1,0,0}
+\definecolor{darkred}{rgb}{0.5,0,0}
+\definecolor{darkgreen}{rgb}{0,0.5,0}
+
+% The listings package provides nice printing of source code.
+\usepackage{listings}
+\lstloadlanguages{C,C++}
+\lstset{fontadjust=false,basicstyle=\small\ttfamily}
+\lstset{language=C}
+\lstdefinelanguage{Dax}{
+  morekeywords={daxWork,daxArray,daxFloat,daxFloat3,daxConnectedComponent,uint},
+  morekeywords={[2]daxGetArrayValue,daxGetArrayValue3,daxSetArrayValue,daxGetConnectedComponent,daxGetNumberOfElements,daxGetWorkForElement,daxGetCellDerivative,daxSetArrayValue3},
+  morekeywords={[3]__worklet__,__positions__,__dep__,__and__,__ref__,__connections__}
+}
+\lstset{
+  keywordstyle=\color{blue},
+  keywordstyle=[2]\color{darkred},
+  keywordstyle=[3]\color{darkgreen}
+}
 
 % Cite commands I use to abstract away the different ways to reference an
 % entry in the bibliography (superscripts, numbers, dates, or author
@@ -614,8 +633,7 @@ coordinate and point scalar to produce a new point scalar.
 
 \begin{figure}[htbp]
 \centering
-{\small
-\begin{verbatim}
+\begin{lstlisting}[language=Dax]
 __worklet__ void PointWorklet(daxWork work,
   const daxArray* __positions__ in_positions,
   const daxArray* __dep__(__positions__) in_point_scalars,
@@ -624,12 +642,11 @@ __worklet__ void PointWorklet(daxWork work,
   daxFloat3 point_cordinate =
     daxGetArrayValue3(work, in_positions);
   daxFloat in_value =
-    daxGetArrayValue(work, in_point_scalar);
+    daxGetArrayValue(work, in_point_scalars);
   daxFloat out_value = ...;
   daxSetArrayValue(work, out_scalars, out_value);
   }
-\end{verbatim}
-}
+\end{lstlisting}
 \caption{Pseudo-code for a worklet operating on input point scalars and point
 coordinates to generate point scalars.}
 \label{fig:DaxPointWorklet}
@@ -647,8 +664,7 @@ is typical of many visualization algorithms.
 
 \begin{figure}[htbp]
 \centering
-{\small
-\begin{verbatim}
+\begin{lstlisting}[language=Dax]
 __worklet__ void CellGradient(const daxWork work,
   const daxArray* __positions__ in_positions,
   const daxArray*
@@ -666,7 +682,8 @@ __worklet__ void CellGradient(const daxWork work,
   for (uint cc=0; cc < num_elements; cc++)
     {
     point_work = daxGetWorkForElement(&cell, cc);
-    scalars[cc] = daxGetArrayValue(point_work, inputArray);
+    scalars[cc]
+      = daxGetArrayValue(point_work, inputArray);
     }
 
   daxFloat3 parametric_cell_center =
@@ -675,7 +692,7 @@ __worklet__ void CellGradient(const daxWork work,
     0, parametric_cell_center, scalars);
   daxSetArrayValue3(work, outputArray, gradient);
 }
-\end{verbatim} }
+\end{lstlisting}
 \caption{Worklet for computing cell gradients in Dax Execution environment.}
 \label{fig:DaxCellGradientWorklet}
 \end{figure}
@@ -760,8 +777,7 @@ cell gradients in VTK's vtkCellDerivatives filter.
 
 \begin{figure}[htbp]
 \centering
-{\small
-\begin{verbatim}
+\begin{lstlisting}[language=C++]
 int vtkCellDerivatives::RequestData(...)
 {
   ...[allocate output arrays]...
@@ -773,13 +789,12 @@ int vtkCellDerivatives::RequestData(...)
     subId = cell->GetParametricCenter(pcoords);
     inScalars->GetTuples(cell->PointIds, cellScalars);
     scalars = cellScalars->GetPointer(0);
-    cell->Derivatives(subId, pcoords, scalars, 1, derivs);
+    cell->Derivatives(subId,pcoords,scalars,1,derivs);
     outGradients->SetTuple(cellId, derivs);
     }
   ...[cleanup]...
 }
-\end{verbatim}
-}
+\end{lstlisting}
 \caption{Code to compute cell gradients in VTK (vtkCellDerivatives). Compare
 this with code for the same in Dax Toolkit
 (Figure~\ref{fig:DaxCellGradientWorklet}).}

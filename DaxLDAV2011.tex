@@ -179,6 +179,16 @@
 
 \newcommand{\fix}[1]{{\color{red}\textbf{\textsc{[#1]}}}}
 
+% Avoid putting figures on their own page.
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\topfraction}{0.95}
+
+% Make sure this is big enough so that only big figures end up on their own
+% page but small enough so that if a figure does have to be on its own
+% page, it won't push everything to the bottom because it's not big enough
+% to have its own page.
+\renewcommand{\floatpagefraction}{.75}
+
 \begin{document}
 
 %% VGTC-specific:
@@ -667,13 +677,13 @@ coordinates to generate point scalars.}
 \label{fig:DaxPointWorklet}
 \end{figure}
 
-As is clear from the above code snippet, the worklet code never directly access
+As is clear from the code snippet in Figure~\ref{fig:DaxPointWorklet}, the worklet code never directly access
 any memory locations. It uses the API to get and set values from opaque types. Also,
 the datum the operations are being performed on are identified by an opaque
 handle called daxWork. daxWork makes it possible for the framework to optimize
 reads and writes to and from global memory.
 
-The following worklet code computes cell-gradients. It demonstrates
+The worklet code in Figure~\ref{fig:DaxCellGradientWorklet} computes cell-gradients. It demonstrates
 iterating over all the points in a cell and computing a derived quantity, which
 is typical of many visualization algorithms.
 

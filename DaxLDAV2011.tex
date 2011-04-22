@@ -230,6 +230,19 @@ between a Dax pipeline
 execution with a traditional visualization pipeline provided by existing
 visualization frameworks such as VTK.
 
+The Dax toolkit is designed to provide a ``pervasive parallelism''
+throughout all its visualization algorithms.  It does this by providing
+programming constructs, the worklets, that operate on a very fine
+granularity of data.  The worklets are designed as serial components, and
+the Dax toolkit handles whatever layers of concurrency are necessary,
+thereby removing the onus from the visualization algorithm developer.
+
+This paper describes the motivation for developing the Dax toolkit, the
+basic design of the Dax system, and the introductory abilities of Dax.  We
+demonstrate the simple operation of Dax, show how its use is similar to the
+popular VTK, and demonstrate how Dax allows an equivalent algorithm to take
+advantage of GPU accelerators.
+
 \begin{figure}
   \centering
   \includegraphics[width=2.5in]{images/DaxPipelineVsTraditionalPipeline}

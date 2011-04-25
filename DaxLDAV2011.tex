@@ -804,6 +804,13 @@ implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
     $144^3$ & 4.21 s & 0.18 (0.20) s &  23 (21) \\
     $256^3$ &  23.76 s & 1.03 (1.11) s & 23 (21) \\
     $512^3$ & 161.23 s & 8.24 (8.87) s &  20 (18) \\
+
+    \\
+    \multicolumn{4}{c}{Elevation $\rightarrow$ Sine $\rightarrow$ Square $\rightarrow$ Cosine} \\
+    \hline
+    $144^3$ & 2.32 s & 0.01 (0.02) s &  231 (115) \\
+    $256^3$ &  12.99 s & 0.05 (0.09) s & 259 (144) \\
+    $512^3$ & 103.88 s & 0.44 (0.65) s &  236 (159) \\
     % More measurements go on new lines with no hline between them.
   \end{tabular}
 \end{table}
@@ -820,6 +827,13 @@ work performed by each worklet as the length of pipeline increases especially
 with worklets that access neighborhoods as is the case with both the Gradient
 worklet as well as the Point Data to Cell Data worklet. We believe by using
 intermediate caching we should be able to address this issue in the near future.
+This conjecture was validated by creating a pipeline involving 4 simple
+worklets that don't use neighborhood information Elevation $\rightarrow$ Sine
+$\rightarrow$ Square $\rightarrow$ Cosine. This pipeline took just 0.44 s (0.65
+s with data transfer) for a $512^3$ dataset. Note that the VTK pipeline used for
+this pipeline is highly synthetic, since one would combine all the 4 operations
+in a single Calculator filter instead of using 4 calculator filters as is the
+case in our test case.
 
 It must be noted that our framework isolates the worklet developer from
 all such optimization concerns. The framework can evolve, incorporating

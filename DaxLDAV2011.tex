@@ -775,9 +775,11 @@ groups (called workgroups in OpenCL).
 \section{Results}
 \label{sec:Results}
 
-Table \ref{tab:Results} compares the execution times for a simple pipeline
-Elevation $\rightarrow$ Cell Gradient applied to 256x256x256 block of 3D uniform
-rectilinear grid using NVIDIA GeForce 8800 GTX graphics card against a serial VTK-based
+Table \ref{tab:Results} compares the execution times for a couple of simple
+pipelines Elevation $\rightarrow$ Cell Gradient and Elevation $\rightarrow$
+Cell Gradient $\rightarrow$ Cell Data To Point Data applied to $144^3$, $256^3$
+and $512^3$ blocks of 3D uniform
+rectilinear grid using NVIDIA Tesla C2050 against a serial VTK-based
 implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
 
 \begin{table}[htbp]
@@ -786,15 +788,41 @@ implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
   \label{tab:Results}
   \vspace{6pt}
   \begin{tabular}{lccc}
-    Computation & VTK & Dax & Speedup \\
+    Problem Size& VTK & Dax & Speedup \\
     \hline
-    Elevation $\rightarrow$ Gradient, $256^3$ & 15.61 s & 0.72 s & 21.7
+    \\
+    \multicolumn{4}{c}{Elevation $\rightarrow$ Gradient} \\
+    \hline
+    $144^3$ & 2.75 s & 0.01 s & 275 \\
+    $256^3$ &  15.52 & 0.14 s & 111 \\
+    $512^3$ &  125.75 & 1.23 & 102 \\
+    \\
+    \multicolumn{4}{c}{Elevation $\rightarrow$ Gradient $\rightarrow$ Point Data to Cell Data} \\
+    \hline
+    $144^3$ & 4.21 s & 0.16 s & 26 \\
+    $256^3$ &  23.76 & 1.36 s & 17 \\
+    $512^3$ & 161.23 & 10.89 & 15 \\
     % More measurements go on new lines with no hline between them.
   \end{tabular}
 \end{table}
 
 We see that even with a simple pipeline involving just two worklets, we can
-get a decent speed up.
+get a decent speed up. However as the we add additional worklets the speedup
+seems to take a hit. We believe the problem is due to the lack of caching of
+intermediate results in our current implementation. As described in Section
+\ref{sec:ExecutionEnvironment}, a daxGetArrayValue\textasteriskcentered~call
+gets translated to either a global memory read for an global input array or
+execution of the producer worklet for that array. Our current implementation
+never caches the intermediate results. This can easily result in a bloat in the
+work performed by each worklet as the length of pipeline increases especially
+with worklets that access neighborhoods as is the case with both the Gradient
+worklet as well as the Point Data to Cell Data worklet. We believe by using
+intermediate caching we should be able to address this issue in the near future.
+
+It must be noted that our framework isolates the worklet developer from
+all such optimization concerns. The framework can evolve, incorporating
+different optimizations for different device architectures internally without
+the worklet developer ever having to rewrite his worklets.
 
 The code that developer writes in the worklet is comparable to the code
 one would write to do the something similar in existing visualization frameworks

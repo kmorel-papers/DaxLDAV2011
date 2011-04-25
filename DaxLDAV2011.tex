@@ -784,7 +784,9 @@ implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
 
 \begin{table}[htbp]
   \centering
-  \caption{Performance comparison between Dax toolkit and VTK}
+  \caption{Performance comparison between Dax toolkit and VTK. Figures in
+    $( )$ show the corresponding values with data transfer times
+      included.}
   \label{tab:Results}
   \vspace{6pt}
   \begin{tabular}{lccc}
@@ -793,15 +795,15 @@ implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
     \\
     \multicolumn{4}{c}{Elevation $\rightarrow$ Gradient} \\
     \hline
-    $144^3$ & 2.75 s & 0.01 s & 275 \\
-    $256^3$ &  15.52 & 0.14 s & 111 \\
-    $512^3$ &  125.75 & 1.23 & 102 \\
+    $144^3$ & 2.75 s & 0.02 (0.03) s & 138 (92) \\
+    $256^3$ &  15.52 s & 0.11 (0.19) s & 141 (82) \\
+    $512^3$ &  125.75 s & 0.89 (1.57) s &  141 (80) \\
     \\
     \multicolumn{4}{c}{Elevation $\rightarrow$ Gradient $\rightarrow$ Point Data to Cell Data} \\
     \hline
-    $144^3$ & 4.21 s & 0.16 s & 26 \\
-    $256^3$ &  23.76 & 1.36 s & 17 \\
-    $512^3$ & 161.23 & 10.89 & 15 \\
+    $144^3$ & 4.21 s & 0.18 (0.20) s &  23 (21) \\
+    $256^3$ &  23.76 s & 1.03 (1.11) s & 23 (21) \\
+    $512^3$ & 161.23 s & 8.24 (8.87) s &  20 (18) \\
     % More measurements go on new lines with no hline between them.
   \end{tabular}
 \end{table}

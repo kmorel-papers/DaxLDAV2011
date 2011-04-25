@@ -739,116 +739,6 @@ Second, it enables the control environment (as explained the section \ref{sec:Co
 the pipeline, catching any invalid connections before the job is dispatched to
 the parallel platform.
 
-\subsection{Control Environment}
-\label{sec:ControlEnvironment}
-
-The control environment can be considered as the scaffolding interface that helps set up the
-visualization pipeline. Each worklet gets wrapped into a module (daxModule),
-with each array argument to the worklet becoming an input or an output port for
-the module. A pipeline is constructed by connecting the output ports to input
-ports on different modules. To execute the pipeline, one calls
-Executive::Execute(). That results in first validating the pipeline to ensure
-that input port requirements are met. Second, an OpenCL kernel is generated that
-executes the entire pipeline on a datum. Finally, the data arrays are
-uploaded to the device memory and the OpenCL kernel is triggered.
-
-The execution of the worklets in the pipeline is demand driven. That is, it is
-triggered by calling the last worklet in the pipeline. The framework maintains
-the information of how each intermediate array is to be generated. When a
-worklet makes a daxGetArrayValue\textasteriskcentered~function call, it checks
-if the value has been computed or available in global memory. If not, it
-executes the source-worklet to produce the value implicitly. Likewise,
-daxSetArrayValue\textasteriskcentered~function calls don't necessarily result
-in a global memory write. If the array being written to an intermediate result
-i.e. result being passed from one worklet to another, then the value gets
-written in local memory and returned by the
-daxGetArrayValue\textasteriskcentered~ call that triggered the execution of the
-worklet. All this is happening under the covers without the worklet having to
-worry about any of these optimizations.
-
-Our current implementations don't store any intermediate values. Consequently if
-a worklet access the same input array location twice, then the producer worklet
-that generates that value is also executed twice. However, based on the
-platform, we can easily support sharing of intermediate results between worklet
-groups (called workgroups in OpenCL).
-
-\section{Results}
-\label{sec:Results}
-
-Table \ref{tab:Results} compares the execution times for a couple of simple
-pipelines Elevation $\rightarrow$ Cell Gradient and Elevation $\rightarrow$
-Cell Gradient $\rightarrow$ Cell Data To Point Data applied to $144^3$, $256^3$
-and $512^3$ blocks of 3D uniform
-rectilinear grid using NVIDIA Tesla C2050 against a serial VTK-based
-implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
-
-\begin{table}[htbp]
-  \centering
-  \caption{Performance comparison between Dax toolkit and VTK. Figures in
-    $( )$ show the corresponding values with data transfer times
-      included.}
-  \label{tab:Results}
-  \vspace{6pt}
-  \begin{tabular}{lccc}
-    Problem Size& VTK & Dax & Speedup \\
-    \hline
-    \\
-    \multicolumn{4}{c}{Elevation $\rightarrow$ Gradient} \\
-    \hline
-    $144^3$ & 2.75 s & 0.02 (0.03) s & 138 (92) \\
-    $256^3$ &  15.52 s & 0.11 (0.19) s & 141 (82) \\
-    $512^3$ &  125.75 s & 0.89 (1.57) s &  141 (80) \\
-    \\
-    \multicolumn{4}{c}{Elevation $\rightarrow$ Gradient $\rightarrow$ Point Data to Cell Data} \\
-    \hline
-    $144^3$ & 4.21 s & 0.18 (0.20) s &  23 (21) \\
-    $256^3$ &  23.76 s & 1.03 (1.11) s & 23 (21) \\
-    $512^3$ & 161.23 s & 8.24 (8.87) s &  20 (18) \\
-
-    \\
-    \multicolumn{4}{c}{Elevation $\rightarrow$ Sine $\rightarrow$ Square $\rightarrow$ Cosine} \\
-    \hline
-    $144^3$ & 2.32 s & 0.01 (0.02) s &  231 (115) \\
-    $256^3$ &  12.99 s & 0.05 (0.09) s & 259 (144) \\
-    $512^3$ & 103.88 s & 0.44 (0.65) s &  236 (159) \\
-    % More measurements go on new lines with no hline between them.
-  \end{tabular}
-\end{table}
-
-We see that even with a simple pipeline involving just two worklets, we can
-get a decent speed up. However as the we add additional worklets the speedup
-seems to take a hit. We believe the problem is due to the lack of caching of
-intermediate results in our current implementation. As described in Section
-\ref{sec:ExecutionEnvironment}, a daxGetArrayValue\textasteriskcentered~call
-gets translated to either a global memory read for an global input array or
-execution of the producer worklet for that array. Our current implementation
-never caches the intermediate results. This can easily result in a bloat in the
-work performed by each worklet as the length of pipeline increases especially
-with worklets that access neighborhoods as is the case with both the Gradient
-worklet as well as the Point Data to Cell Data worklet. We believe by using
-intermediate caching we should be able to address this issue in the near future.
-This conjecture was validated by creating a pipeline involving 4 simple
-worklets that don't use neighborhood information Elevation $\rightarrow$ Sine
-$\rightarrow$ Square $\rightarrow$ Cosine. This pipeline took just 0.44 s (0.65
-s with data transfer) for a $512^3$ dataset. Note that the VTK pipeline used for
-this pipeline is highly synthetic, since one would combine all the 4 operations
-in a single Calculator filter instead of using 4 calculator filters as is the
-case in our test case.
-
-It must be noted that our framework isolates the worklet developer from
-all such optimization concerns. The framework can evolve, incorporating
-different optimizations for different device architectures internally without
-the worklet developer ever having to rewrite his worklets.
-
-The code that developer writes in the worklet is comparable to the code
-one would write to do the something similar in existing visualization frameworks
-such as VTK. Figure~\ref{fig:DaxVTKCompare} compares the code used in Dax
-to compute cell gradients and a code snippet for computing cell gradients
-in VTK's vtkCellDerivatives filter.  This comparison clearly shows that,
-apart from minor syntactic differences, the code for the two is nearly
-identical (although Dax is currently missing a convenience function for
-getting all scalars in a cell that is available in VTK).
-
 \begin{figure*}
   \centering
   \begin{minipage}[t]{.49\linewidth}
@@ -911,6 +801,122 @@ int vtkCellDerivatives::RequestData(...)
     right.}
   \label{fig:DaxVTKCompare}
 \end{figure*}
+
+\subsection{Control Environment}
+\label{sec:ControlEnvironment}
+
+The control environment can be considered as the scaffolding interface that helps set up the
+visualization pipeline. Each worklet gets wrapped into a module (daxModule),
+with each array argument to the worklet becoming an input or an output port for
+the module. A pipeline is constructed by connecting the output ports to input
+ports on different modules. To execute the pipeline, one calls
+Executive::Execute(). That results in first validating the pipeline to ensure
+that input port requirements are met. Second, an OpenCL kernel is generated that
+executes the entire pipeline on a datum. Finally, the data arrays are
+uploaded to the device memory and the OpenCL kernel is triggered.
+
+The execution of the worklets in the pipeline is demand driven. That is, it is
+triggered by calling the last worklet in the pipeline. The framework maintains
+the information of how each intermediate array is to be generated. When a
+worklet makes a daxGetArrayValue\textasteriskcentered~function call, it checks
+if the value has been computed or available in global memory. If not, it
+executes the source-worklet to produce the value implicitly. Likewise,
+daxSetArrayValue\textasteriskcentered~function calls don't necessarily result
+in a global memory write. If the array being written to an intermediate result
+i.e. result being passed from one worklet to another, then the value gets
+written in local memory and returned by the
+daxGetArrayValue\textasteriskcentered~ call that triggered the execution of the
+worklet. All this is happening under the covers without the worklet having to
+worry about any of these optimizations.
+
+Our current implementations don't store any intermediate values. Consequently if
+a worklet access the same input array location twice, then the producer worklet
+that generates that value is also executed twice. However, based on the
+platform, we can easily support sharing of intermediate results between worklet
+groups (called workgroups in OpenCL).
+
+\section{Results}
+\label{sec:Results}
+
+Table \ref{tab:Results} compares the execution times for a couple of simple
+pipelines Elevation $\rightarrow$ Cell Gradient and Elevation $\rightarrow$
+Cell Gradient $\rightarrow$ Cell Data To Point Data applied to $144^3$, $256^3$
+and $512^3$ blocks of 3D uniform
+rectilinear grid using NVIDIA Tesla C2050 against a serial VTK-based
+implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Performance comparison between Dax toolkit and VTK. Values in
+    parentheses show the corresponding values with data transfer times
+    included.}
+  \label{tab:Results}
+  \vspace{6pt}
+  \begin{tabular}{llrrr}
+    \multicolumn{2}{l}{Pipeline/Mesh Size} & VTK Time & Dax Time & Speedup \\
+    \hline
+    \multicolumn{5}{l}{Elevation $\rightarrow$ Gradient} \\
+    \qquad
+    & $144^3$ & 2.75 s & 0.02 (0.03) s & 138 (92) \\
+    & $256^3$ &  15.52 s & 0.11 (0.19) s & 141 (82) \\
+    & $512^3$ &  125.75 s & 0.89 (1.57) s &  141 (80) \\
+    %% \multicolumn{5}{l}{Elevation $\rightarrow$ Gradient $\rightarrow$ Point Data to Cell Data} \\
+    %% & $144^3$ & 4.21 s & 0.18 (0.20) s &  23 (21) \\
+    %% & $256^3$ &  23.76 s & 1.03 (1.11) s & 23 (21) \\
+    %% & $512^3$ & 161.23 s & 8.24 (8.87) s &  20 (18) \\
+    \multicolumn{5}{l}{Elevation $\rightarrow$ Sine $\rightarrow$ Square $\rightarrow$ Cosine} \\
+    & $144^3$ & 2.32 s & 0.01 (0.02) s &  231 (115) \\
+    & $256^3$ &  12.99 s & 0.05 (0.09) s & 259 (144) \\
+    & $512^3$ & 103.88 s & 0.44 (0.65) s &  236 (159) \\
+  \end{tabular}
+\end{table}
+
+%% We see that even with a simple pipeline involving just two worklets, we can
+%% get a decent speed up. However as the we add additional worklets the speedup
+%% seems to take a hit. We believe the problem is due to the lack of caching of
+%% intermediate results in our current implementation. As described in Section
+%% \ref{sec:ExecutionEnvironment}, a daxGetArrayValue\textasteriskcentered~call
+%% gets translated to either a global memory read for an global input array or
+%% execution of the producer worklet for that array. Our current implementation
+%% never caches the intermediate results. This can easily result in a bloat in the
+%% work performed by each worklet as the length of pipeline increases especially
+%% with worklets that access neighborhoods as is the case with both the Gradient
+%% worklet as well as the Point Data to Cell Data worklet. We believe by using
+%% intermediate caching we should be able to address this issue in the near future.
+%% This conjecture was validated by creating a pipeline involving 4 simple
+%% worklets that don't use neighborhood information Elevation $\rightarrow$ Sine
+%% $\rightarrow$ Square $\rightarrow$ Cosine. This pipeline took just 0.44 s (0.65
+%% s with data transfer) for a $512^3$ dataset. Note that the VTK pipeline used for
+%% this pipeline is highly synthetic, since one would combine all the 4 operations
+%% in a single Calculator filter instead of using 4 calculator filters as is the
+%% case in our test case.
+
+%% It must be noted that our framework isolates the worklet developer from
+%% all such optimization concerns. The framework can evolve, incorporating
+%% different optimizations for different device architectures internally without
+%% the worklet developer ever having to rewrite his worklets.
+
+We can see that even with a simple pipeline involving two worklets but that
+also incorporates computation based on topological connections (cell
+gradients), Dax gets a decent speed up over the existing implementation in
+VTK.  A simpler but deeper pipeline, performing a simple sequence of unary
+operations, gets and even better performance boost.
+
+One should note that although getting a performance boost by using a GPU
+credits our system,  the intention is not a direct comparison between
+numbers.  Comparing runtimes between CPU and GPU is in many ways an
+``apples to oranges'' comparison at any rate.  Rather, the point is that
+the Dax toolkit makes it simple to write code that can be run efficiently
+on very parallel-centric processors.
+
+The code that developer writes in the worklet is comparable to the code
+one would write to do the something similar in existing visualization frameworks
+such as VTK. Figure~\ref{fig:DaxVTKCompare} compares the code used in Dax
+to compute cell gradients and a code snippet for computing cell gradients
+in VTK's vtkCellDerivatives filter.  This comparison clearly shows that,
+apart from minor syntactic differences, the code for the two is nearly
+identical (although Dax is currently missing a convenience function for
+getting all scalars in a cell that is available in VTK).
 
 \section{Challenges Ahead}
 \label{sec:Challenges}

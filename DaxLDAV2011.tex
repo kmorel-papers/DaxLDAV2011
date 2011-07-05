@@ -98,15 +98,15 @@
 %% Abstract section
 \abstract{ Experts agree that the exascale machine will comprise processors
   that contain many cores, which in turn will necessitate a much higher
-  degree of concurrency.  Software will require a minimum of a 1000 times
+  degree of concurrency.  Software will require a minimum of a 1,000 times
   more concurrency.  Most parallel analysis and visualization algorithms
   today work by partitioning data and running mostly serial algorithms
   concurrently on each data partition.  Although this approach lends itself
-  well to the concurrency of current high performance computing, it does
+  well to the concurrency of current high-performance computing, it does
   not exhibit the appropriate pervasive parallelism required for exascale
   computing. The data partitions are too small and the overhead of the
-  threads too large to make effective use of all the cores in an extreme
-  scale machine.  This paper introduces a new visualization framework
+  threads is too large to make effective use of all the cores in an
+  extreme-scale machine.  This paper introduces a new visualization framework
   designed to exhibit the pervasive parallelism necessary for extreme scale
   machines.  We demonstrate the use of this system on a GPU processor,
   which we feel is the best analog to an exascale node that we have
@@ -274,7 +274,7 @@ advantage of GPU accelerators.
 
 Since its inception, many improvements have been made to the visualization
 pipeline to allow it to function well with large data.  By dividing tasks,
-pipelines, or data amongst processes, the serial algorithms of a
+pipelines, or data among processes, the serial algorithms of a
 visualization pipeline can work in parallel with little or no
 modification\lcite{Ahrens00}.  In particular, the data parallel
 mode, partitioning the data and replicating the pipeline, performs
@@ -437,11 +437,11 @@ Visualization pipelines fit poorly into this massive concurrency model; the
 granularity of the pipeline computational unit, the filter, is too large.
 Each filter must ingest, process, and produce an entire data set when
 invoked.  Large scale concurrency today is achieved by replicating the
-pipeline and partitioning the input data amongst processes\lcite{Ahrens00}.
+pipeline and partitioning the input data among processes\lcite{Ahrens00}.
 However, extreme scale computers would require the data to be broken into
 billions of partitions.  The overhead of capturing the connectivity
-information between these partitions as well as the overhead of executing
-these large computation units on such small partitions of data are too great
+information between these partitions, as well as the overhead of executing
+these large computation units on such small partitions of data, is too great
 to make such an approach practical.
 
 To understand why, consider the sobering comparison between the Jaguar XT5
@@ -489,34 +489,34 @@ alone.
 Even getting around problems with the overhead of MPI, the visualization
 pipeline still has inherent problems at this level of concurrency.
 Consider using Jaguar to process a one trillion cell mesh.  If we partition
-these cells evenly amongst all the cores where replicated pipelines will
+these cells evenly among all the cores where replicated pipelines will
 process each partition, that yields roughly 5 million cells per pipeline.
 General rules of thumb indicate this ratio is optimal for structured grids
 when running parallel VTK pipelines\lcite{ParaViewTutorial}.  Scaling to an
 exascale machine, we can project to processing 500 trillion cells
 (considering this is the expected growth in system memory).  If we
-partition these cells evenly amongst all the necessary cores where
+partition these cells evenly among all the necessary cores where
 replicated pipelines will process each partition, that yields as few as 50
 thousand cells per pipeline.  Here we are starving our pipeline.
 
 Even if we somehow avoid the problem of running on the largest exascale
 machines, the problem of a fundamental change in processor architecture
 persists.  The parallel visualization pipeline simply does not conform well
-to multi-core processors and many-core accelerators.  In response several
+to multicore processors and many-core accelerators.  In response several
 researchers are pursing the idea of a \keyterm{hybrid parallel
-  pipeline}\lcite{Camp10,Howison11,Li08}.  The hybrid parallel pipeline
-breaks the problem into two hierarchical levels.  The first level
-partitions the data amongst distributed memory nodes in the same way as the
-current parallel pipeline.  In the second level we run a threaded shared
-memory algorithm to take advantage of a multi- or many-core processor.
+  pipeline}\lcite{Camp10,Howison11,Li08}.  This pipeline breaks the problem
+into two hierarchical levels.  The first level partitions the data among
+distributed-memory nodes in the same way as does the current parallel
+pipeline.  In the second level we run a threaded, shared-memory algorithm
+to take advantage of a multi- or many-core processor.
 
-Although the current visualization pipeline does a good job in providing
+Although the current visualization pipeline does a good job of providing
 this first level of distributed memory concurrency, it provides no
 facilities whatsoever for this second layer of multi-threaded concurrency.
 This places the onus on each visualization pipeline filter developer.  That
 is, each filter must be independently and painstakingly designed to exploit
 concurrency and optimized for whatever architecture is used.  Even if this
-undertaking were to be performed, the concurrency is ultimately undermined
+undertaking were to be performed, the concurrency would ultimately be undermined
 at the connections of filters where execution threads must be synchronized
 and data combined.
 

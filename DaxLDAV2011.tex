@@ -545,11 +545,15 @@ elemental pieces of the mesh.
 
 In this section we describe different components of the Dax framework. In our
 current implementation we use the GPU processor as an analog for the exascale
-node. We use OpenCL\lcite{OpenCL} to compile and execute worklets on the GPU, however it must
-be noted that all the user-developed worklet code is a subset of Standard C
-\lcite{ANSIC} and
-is independent of any GPGPU/OpenCL constructs, thus making it possible to port
-the worklets to different computing languages based on Standard C including CUDA\lcite{CUDA}.
+node.  We use CUDA\lcite{CUDA} to compile and execute worklets on the GPU.
+However, it must be noted that all the user-developed worklet code is based
+on standard C++ and is independent of any GPGPU/CUDA constructs, thus
+making it possible to port the worklets to different computing languages
+based on standard C++.  We originally considered using
+OpenCL~\lcite{OpenCL}, but found CUDA to be much more mature than current
+OpenCL implementations and therefore much easier to work with.  We also
+prefer using the C++ language constructs available in CUDA that are not
+available in OpenCL.
 
 With the analysis algorithms implemented as worklets, the framework provides 
 mechanisms to connect these worklets to form visualization pipelines. Since we
@@ -567,8 +571,8 @@ Dax toolkit provides two programming environments: one to develop new worklets a
 write worklets for different visualization algorithms. This API provides
 work for one datum with convenient access to information such as
 connectivity and neighborhood needed by typical visualization algorithms. This
-is a Standard C API that makes it possible to compile the worklets for
-existing GPU devices using OpenCL.
+is a C++ API that makes it possible to compile the worklets for
+existing GPU devices using CUDA.
 \item[Control Environment] This is an API that is used on a node in an
 exascale machine to build the visualization pipeline, transfer data to and from
 IO devices, and schedule the parallel execution on the worklets. It is a C++ API
@@ -647,10 +651,10 @@ is an object that builds the data-flow pipeline and schedules its execution on
 the device. The complexity in the Executive stems from ensuring that the
 worklets are executed in correct orders on the device.
 
-For our implementation, we are focusing on OpenCL. Thus the worklet is
-written as an OpenCL function using dAPI (Device API) for accessing data
-(described later). The executive, accessed via OpenCL's host API,
-generates an OpenCL kernel to schedules the kernel for execution to produce
+For our implementation, we are focusing on CUDA. Thus the worklet is
+written as a CUDA function using the execution environment API for accessing data
+(described later). The executive, accessed via CUDA's host API,
+generates a CUDA kernel to schedules the kernel for execution to produce
 the requested result.
 
 \subsection{Execution Environment}
@@ -734,9 +738,12 @@ Since the worklet code never directly accesses memory, the framework is free to
 optimize the fetches and write-backs to global memory under the covers, avoiding
 global memory writes all together for intermediate results in the pipeline.
 Furthermore, the design isolates the worklet developers from changes to the
-underlying platform. For example, by simply providing CUDA based implementations
-for all execution environment and updating the executive to use CUDA runtime components, we
-can port the entire framework to a CUDA platform instead of OpenCL.
+underlying platform. For example, by simply providing a standard C++ based
+implementations for the execution environment API and updating the
+executive to use a CPU thread scheduling
+mechanism\lcite{pthreads,OpenMP,TBB} we can port the entire framework a CPU
+multi-core platform.  We have high hopes of doing the same for future
+unknown systems.
 
 The annotations used in the arguments to the worklets serve two purposes.
 First, it enables the worklet developer to make certain assumptions about
@@ -818,9 +825,9 @@ with each array argument to the worklet becoming an input or an output port for
 the module. A pipeline is constructed by connecting the output ports to input
 ports on different modules. To execute the pipeline, one calls
 Executive::Execute(). That results in first validating the pipeline to ensure
-that input port requirements are met. Second, an OpenCL kernel is generated that
+that input port requirements are met. Second, a CUDA kernel is generated that
 executes the entire pipeline on a datum. Finally, the data arrays are
-uploaded to the device memory and the OpenCL kernel is triggered.
+uploaded to the device memory and the CUDA kernel is triggered.
 
 The execution of the worklets in the pipeline is demand driven. That is, it is
 triggered by calling the last worklet in the pipeline. The framework maintains
@@ -836,11 +843,11 @@ daxGetArrayValue\textasteriskcentered~ call that triggered the execution of the
 worklet. All this is happening under the covers without the worklet having to
 worry about any of these optimizations.
 
-Our current implementations don't store any intermediate values. Consequently if
-a worklet access the same input array location twice, then the producer worklet
-that generates that value is also executed twice. However, based on the
-platform, we can easily support sharing of intermediate results between worklet
-groups (called workgroups in OpenCL).
+%% Our current implementations don't store any intermediate values. Consequently if
+%% a worklet access the same input array location twice, then the producer worklet
+%% that generates that value is also executed twice. However, based on the
+%% platform, we can easily support sharing of intermediate results between worklet
+%% groups (called workgroups in OpenCL).
 
 \section{Results}
 \label{sec:Results}

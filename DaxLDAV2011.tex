@@ -130,6 +130,7 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{amsmath}
+\usepackage{dsfont}
 \usepackage{graphicx}
 \usepackage{varioref}
 \usepackage{fancyvrb}
@@ -164,6 +165,10 @@
   keywordstyle=[3]\color{darkgreen}
 }
 
+\newcommand*{\textC}[1]{\texttt{#1}}
+
+\newcommand{\asterisk}{\textasteriskcentered}
+
 % Cite commands I use to abstract away the different ways to reference an
 % entry in the bibliography (superscripts, numbers, dates, or author
 % abbreviations).  \scite is a short cite that is used immediately after
@@ -182,6 +187,7 @@
 % Avoid putting figures on their own page.
 \renewcommand{\textfraction}{0.05}
 \renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.5}
 
 % Make sure this is big enough so that only big figures end up on their own
 % page but small enough so that if a figure does have to be on its own
@@ -572,22 +578,18 @@ write worklets for different visualization algorithms. This API provides
 work for one datum with convenient access to information such as
 connectivity and neighborhood needed by typical visualization algorithms. This
 is a C++ API that makes it possible to compile the worklets for
-existing GPU devices using CUDA.
+existing GPU devices using CUDA.  All classes in the execution environment
+are placed in the \textC{dax::exec} namespace.
 \item[Control Environment] This is an API that is used on a node in an
 exascale machine to build the visualization pipeline, transfer data to and from
 IO devices, and schedule the parallel execution on the worklets. It is a C++ API
 that is designed for users that want to use the Dax toolkit to analyze and
-visualize their data using provided or supplied worklets.
+visualize their data using provided or supplied worklets.  All classes in
+the control environment are placed in the \textC{dax::cont} namepsace.
 \end{description}
 
-\begin{figure}
-  \centering
-  \includegraphics{images/DaxDiagram}
-  \caption{Layout of the Dax system.
-    Applications using Dax have a different programming and execution environment than the worklets.
-    The executive organizes the interaction between these two environments.}
-  \label{fig:DaxDiagram}
-\end{figure}
+There are a few basic types, such as scalars and vectors, that are common
+to both environments.  These are placed in the \textC{dax} namespace.
 
 The dual programming environments is partially a convenience to isolate the
 application from the execution of the worklets and is partially a necessity to
@@ -600,39 +602,83 @@ and schedules threads in the execution environment.  The relationship between
 the control and execution environments and the executive's role in managing them
 is demonstrated in Figure~\ref{fig:DaxDiagram}.
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics{images/DaxDiagram}
+  \caption{Layout of the Dax system.
+    Applications using Dax have a different programming and execution environment than the worklets.
+    The executive organizes the interaction between these two environments.}
+  \label{fig:DaxDiagram}
+\end{figure}
+
 \subsection{Data Model}
 \label{sec:DataModel}
 
-The data model used by the Dax framework is loosely based on the OpenDX Data Model\lcite{OpenDXManual},
-which itself is based on the data model proposed by Haber \etal\scite{Haber1991}.
-This data model makes it possible to describe data attributes defined on
-different kinds of grids including uniform rectilinear grids, curvilinear grids,
-and unstructured grids made up of triangles, quads, tetrahedra, etc. Similar
-to OpenDX, the bulk of the data is encapsulated in array objects called
-\emph{daxArray}. Also, there are different types of arrays such as
-regular array, constant array, and irregular array that make it possible to
-compactly represent values in the array. A dataset comprises a named
-collection of arrays with relationships between the arrays. There are two
-possible relationships between arrays:
+Regardless of how a data set is lain out in memory, the Dax API defines
+meshes using a vertex-cell model typical of visualization tools such as
+VTK\lcite{VTKBook}.  Each mesh contains a set of vertices with each vertex
+containing coordinates in $\mathds{R}^3$ space.  Cells are defined with a
+type and a list of vertex indices in a predefined order that follows the
+standard CGNS convention\lcite{CGNSConvention}.  Adjacency information is
+implicit in vertices shared among cells.
+
+Field data can be applied to the mesh.  Field data (currently) comes in two
+flavors.  Fields can be applied to points and then interplated across the
+volume of cells.  Fields can also be applied to cells, in which case the
+field represents an integrated value over the volume of the cell.
+
+A worklet is not allowed to access the mesh in its entirety.  Rather, any
+instance of a worklet is only allowed access on a very small neighborhood.
+This constraint allows Dax to schedule the worklet on many threads and
+carefully manage the memory accesses of each thread.  Every instance of a
+worklet is given a \textC{dax::exec::Work\asterisk} object.  There are
+multiple types of work objects differentiated by the neighborhood of data
+that the worklet can access and the type of data the worklet can output.
+The worklet chooses what type of work it needs to perform, and the Dax
+scheduler provides the appropriate data for each worklet instance.  Our
+current initial implementation provides the following two simple mapping
+work objects:
 \begin{description}
-\item[dep] relationship records a dependency. Array A \emph{dep}ends on
-array B implies that A has exactly as many items as B and every item in A
-corresponds to an item in B.
-\item[ref] relationship records a reference or indirection. Array A
-\emph{ref}erences array B implies that values in A are references to values in
-B e.g. an array describing the cell connections between points references the
-``positions'' array that defines the point coordinates.
+\item[\textC{dax::exec::WorkMapField}] This very simple mapping operation
+  computes a function on the field values at a single point or cell on the
+  mesh and creates a new field value at that same location.  No other
+  neighborhood information is available.
+\item[\textC{dax::exec::WorkMapCell}] This mapping operation computes a
+  function on the field values within a single cell.  Fields on cells are
+  accessible and fields on points may be interpolated throughout the cell.
+  A new field value for the cell is created.
 \end{description}
+Soon to follow is a \textC{dax::exec::WorkMapPoint} that provides a worklet
+with cell field values for all cells neighboring a point.  We are also in
+the process of enabling worklets that generate topology and then resolve
+coincident points for the created topology.
 
-\begin{figure}
-  \centering
-  \includegraphics[width=2.5in]{images/DaxDataModel}
-  \caption{Example of a dataset with a point and cell scalars.}
-  \label{fig:DaxDataModel}
-\end{figure}
+For work types that provide access to a cell's topology (currently just
+\textC{dax::exec::WorkMapCell}, but more to come), that work object
+provides a \textC{dax::exec::Cell} object.  That object provides
+information about the cell structure and interpolations of fields in it.
+Currently \textC{dax::exec::Cell} object represents a generic cell of any
+type.  However, we have discovered that the switch statements to implement
+the generic cell perform poorly in CUDA, so we plan to move to a collection
+of typed cell objects with methods choosen through templates or
+polymorphism.
 
-Figure~\ref{fig:DaxDataModel} shows a representation for a dataset with cell
-and point attributes.
+Fields are accessed through handle classes named
+\textC{dax::exec::Field\asterisk}.  These field handles work with the work
+objects to retreive actual values from the field.  Dax provides the
+following field types:
+\begin{description}
+\item[\textC{dax::exec::Field}] Handle to a generic field.  Could reference
+  either a point field or a cell field.  Used in conjunction with a
+  \textC{dax::exec::WorkMapField} to allow the worklet to be mapped to
+  either point fields or cell fields.
+\item[\textC{dax::exec::FieldCell}] A field that is defined on cells.
+\item[\textC{dax::exec::FieldPoint}] A field that is defined on points.
+\item[\textC{dax::exec::FieldCoordinates}] The point field that defines the
+  vertex coordinates.  Within a worklet, this field behaves just like any
+  other \textC{dax::exec::FieldPoint}, but it provides a hint to Dax on
+  which field to use.
+\end{description}
 
 
 \subsection{Execution Model}

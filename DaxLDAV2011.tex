@@ -438,16 +438,17 @@ information between these partitions as well as the overhead of executing
 these large computation units on such small partitions of data are too great
 to make such an approach practical.
 
-To understand why, consider the sobering comparison between the
-Jaguar XT5 partition, a current petascale machine, and the projections for
-an exascale machine of by the International Exascale Software Project
-RoadMap\lcite{ExascaleRoadMap} given in Table~\ref{table:PetaExaCompare}.
-Because processor clock rates are not increasing, an exascale computer
-requires a thousand-fold increase in the number of cores.  Furthermore,
-trends in processor design suggest that these cores must be hyper-threaded
-in order to keep them executing at full efficiency.  In all, to drive a
-complete exascale machine will require between one and ten billion
-concurrently running threads.
+To understand why, consider the sobering comparison between the Jaguar XT5
+partition, a current petascale machine, and the projections for an exascale
+machine given in Table~\ref{table:PetaExaCompare}.  These estimates are the
+envelope of those given by the International Exascale Software Project
+RoadMap\lcite{ExascaleRoadMap} and the DOE Exascale Initiative
+Roadmap\lcite{ASCACSummaryReport2010}.  Because processor clock rates are
+not increasing, an exascale computer requires a thousand-fold increase in
+the number of cores.  Furthermore, trends in processor design suggest that
+these cores must be hyper-threaded in order to keep them executing at full
+efficiency.  In all, to drive a complete exascale machine will require
+between one and ten billion concurrently running threads.
 
 \begin{table}[htbp]
   \centering
@@ -458,9 +459,15 @@ concurrently running threads.
   \begin{tabular}{llll}
     & Jaguar -- XT5 & Exascale & Increase \\
     \hline
-    Cores & 224,256 & \parbox{.7in}{\vspace*{2pt}100 million\\ \hspace*{6pt} -- 1 billion\vspace*{2pt}} & $\sim{}1,000\times$ \\
-    Threads & 224,256 way & 1 -- 10 billion way & $\sim{}50,000\times$ \\
-    Memory & 300 Terabytes & 128 Petabytes & $\sim{}500\times$
+    Cores & 224,256
+    & \parbox{.7in}{\vspace*{2pt}100 million\\ \hspace*{6pt} -- 1 billion\vspace*{2pt}}
+    & 400 -- 5,000$\times$ \\
+    Threads & 224,256 way
+    & \parbox{.7in}{\vspace*{2pt}1 -- 10\\\hspace*{6pt}billion way\vspace*{2pt}}
+    & \parbox{.65in}{\vspace*{2pt}4,000\\ \hspace*{6pt} -- 50,000$\times$\vspace*{2pt}} \\
+    Memory & 300 Terabytes
+    & \parbox{.7in}{\vspace*{2pt}10 -- 128\\\hspace*{6pt} Petabytes\vspace*{2pt}}
+    & 30 -- 500$\times$
   \end{tabular}
 \end{table}
 

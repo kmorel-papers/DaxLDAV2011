@@ -155,9 +155,9 @@
 \lstset{fontadjust=false,basicstyle=\small\ttfamily}
 \lstset{language=C}
 \lstdefinelanguage{Dax}{
-  morekeywords={daxWork,daxArray,daxFloat,daxFloat3,daxConnectedComponent,uint},
-  morekeywords={[2]daxGetArrayValue,daxGetArrayValue3,daxSetArrayValue,daxGetConnectedComponent,daxGetNumberOfElements,daxGetWorkForElement,daxGetCellDerivative,daxSetArrayValue3},
-  morekeywords={[3]__worklet__,__positions__,__dep__,__and__,__ref__,__connections__}
+  morekeywords={WorkMapField,WorkMapCell,Cell,Field,FieldCell,FieldPoint,FieldCoordinates,Scalar,Vector3,Vector4},
+  morekeywords={[2]dax,exec,comp},
+  morekeywords={[3]DAX_WORKLET,DAX_IN,DAX_OUT}
 }
 \lstset{
   keywordstyle=\color{blue},
@@ -623,7 +623,7 @@ standard CGNS convention\lcite{CGNSConvention}.  Adjacency information is
 implicit in vertices shared among cells.
 
 Field data can be applied to the mesh.  Field data (currently) comes in two
-flavors.  Fields can be applied to points and then interplated across the
+flavors.  Fields can be applied to points and then interpolated across the
 volume of cells.  Fields can also be applied to cells, in which case the
 field represents an integrated value over the volume of the cell.
 
@@ -660,13 +660,13 @@ information about the cell structure and interpolations of fields in it.
 Currently \textC{dax::exec::Cell} object represents a generic cell of any
 type.  However, we have discovered that the switch statements to implement
 the generic cell perform poorly in CUDA, so we plan to move to a collection
-of typed cell objects with methods choosen through templates or
+of typed cell objects with methods chosen through templates or
 polymorphism.
 
 Fields are accessed through handle classes named
-\textC{dax::exec::Field\asterisk}.  These field handles work with the work
-objects to retreive actual values from the field.  Dax provides the
-following field types:
+\textC{dax::exec::Field\asterisk}.  These field handles collaborate with
+the work objects to retrieve actual values from the field.  Dax provides
+the following field types:
 \begin{description}
 \item[\textC{dax::exec::Field}] Handle to a generic field.  Could reference
   either a point field or a cell field.  Used in conjunction with a
@@ -687,15 +687,15 @@ following field types:
 The execution model is based on the data-flow paradigm. In a data-flow
 implementation, all nodes in the data-flow pipeline are pure stateless functions
 through which the data flows. The Dax execution model is similar. It comprises
-Modules (daxModule) that are connected together to form pipelines. The crux
+Modules (\textC{dax::cont::Module}) that are connected together to form pipelines. The crux
 of the module (i.e. the algorithm or the processing logic) is the worklet. A
-worklet is C-function that takes processes input array(s) to generate output
-array(s). The module can be thought of as the wrapper around the worklet that
+worklet is simply a C++-function that processes input elements and fields to generate output
+elements and fields. The module can be thought of as the wrapper around the worklet that
 facilitates hooking up of these worklets to form pipelines as well as provide
 support for type-checking and kernel generation. The Executive
 is an object that builds the data-flow pipeline and schedules its execution on
 the device. The complexity in the Executive stems from ensuring that the
-worklets are executed in correct orders on the device.
+worklets are executed in correct order on the device.
 
 For our implementation, we are focusing on CUDA. Thus the worklet is
 written as a CUDA function using the execution environment API for accessing data
@@ -707,27 +707,34 @@ the requested result.
 \label{sec:ExecutionEnvironment}
 
 The worklet code uses this API to access the data, compute values, and then
-produce the result. A worklet is a simply a C-function that takes in input
-array(s) and produces an output array. The execution environment adds annotations to the arguments
-making it possible to deduce relationships between the arguments. For example, the
-following code shows the prototype for a worklet that takes in a position
-coordinate and point scalar to produce a new point scalar.
+produce the result. As stated, a worklet is simply a C++-function that
+processes input elements and fields to generate output elements and
+fields. In addition to the classes previously mentioned, the Dax execution
+environment provides a modifier for the worklet function
+(\textC{DAX\_WORKLET}) and modifiers for the worklet arguments
+(\textC{DAX\_IN} and \textC{DAX\_OUT}) implemented as C macros.  The
+purpose of these modifies is twofold.  First, they provide the ability to
+add language specific modifiers such as \textC{\_\_device\_\_} for CUDA.
+Second, they, in conjunction with the data types, help a simple parser to
+find the worklet function and identify the purpose of the arguments and
+allow the control environment to validate the pipeline, catching any
+invalid connections before the job is dispatch to the parallel platform.
+
+As an example, the following code shows the prototype for a worklet that
+takes in a position coordinate and point scalar to produce a new point
+scalar.
 
 \begin{figure}[htbp]
-\centering
 \begin{lstlisting}[language=Dax]
-__worklet__ void PointWorklet(daxWork work,
-  const daxArray* __positions__ in_positions,
-  const daxArray* __dep__(__positions__) in_point_scalars,
-  daxArray* __dep__(__positions__) out_scalars)
-  {
-  daxFloat3 point_cordinate =
-    daxGetArrayValue3(work, in_positions);
-  daxFloat in_value =
-    daxGetArrayValue(work, in_point_scalars);
-  daxFloat out_value = ...;
-  daxSetArrayValue(work, out_scalars, out_value);
-  }
+DAX_WORKLET void FieldWorklet(
+    DAX_IN dax::exec::WorkMapField& work,
+    DAX_IN dax::exec::Field& in_field,
+    DAX_OUT dax::exec::Field& out_field)
+{
+  dax::Scalar in_value = in_field.GetScalar(work);
+  dax::Scalar out_value = ...;
+  out_field.Set(work, out_value);
+}
 \end{lstlisting}
 \caption{Pseudo-code for a worklet operating on input point scalars and point
 coordinates to generate point scalars.}
@@ -736,44 +743,34 @@ coordinates to generate point scalars.}
 
 As is clear from the code snippet in Figure~\ref{fig:DaxPointWorklet}, the worklet code never directly access
 any memory locations. It uses the API to get and set values from opaque types. Also,
-the datum the operations are being performed on are identified by an opaque
-handle called daxWork. daxWork makes it possible for the framework to optimize
+the datum the operations are being performed on is identified by the opaque work
+handle. The work object makes it possible for the framework to optimize
 reads and writes to and from global memory.
 
-The worklet code in Figure~\ref{fig:DaxCellGradientWorklet} computes cell-gradients. It demonstrates
-iterating over all the points in a cell and computing a derived quantity, which
-is typical of many visualization algorithms.
+The worklet code in Figure~\ref{fig:DaxCellGradientWorklet} computes
+cell-gradients.  It demonstrates using a cell's topology and fields to
+compute a derived quantity, which is typical of many visualization
+algorithms.
 
 \begin{figure}[htbp]
 \centering
 \begin{lstlisting}[language=Dax]
-__worklet__ void CellGradient(const daxWork work,
-  const daxArray* __positions__ in_positions,
-  const daxArray*
-    __and__(__connections__, __ref__(in_positions))
-    in_connections,
-  const daxArray* __dep__(in_positions) inputArray,
-  daxArray* __dep__(in_connections) outputArray)
+DAX_WORKLET void CellGradient(
+    DAX_IN dax::exec::WorkMapCell& work,
+    DAX_IN dax::exec::FieldCoordinates points,
+    DAX_IN dax::exec::FieldPoint& point_attribute,
+    DAX_OUT dax::exec::FieldCell& cell_attribute)
 {
-  daxFloat3 parametric_cell_center =
-    (daxFloat3)(0.5, 0.5, 0.5);
-
-  daxConnectedComponent cell;
-  daxGetConnectedComponent(work, in_connections, &cell);
-
-  daxFloat scalars[MAX_CELL_POINTS];
-  uint num_elements = daxGetNumberOfElements(&cell);
-  daxWork point_work;
-  for (uint cc=0; cc < num_elements; cc++)
-    {
-    point_work = daxGetWorkForElement(&cell, cc);
-    scalars[cc]
-      = daxGetArrayValue(point_work, inputArray);
-    }
-
-  daxFloat3 gradient = daxGetCellDerivative(&cell,
-    0, parametric_cell_center, scalars);
-  daxSetArrayValue3(work, outputArray, gradient);
+  dax::Vector3 parametric_cell_center
+    = dax::make_Vector3(0.5, 0.5, 0.5);
+  dax::exec::Cell cell(work);
+ 
+  dax::Vector3 value = cell.Derivative(
+    parametric_cell_center,
+    points,
+    point_attribute,
+    0);
+  cell_attribute.Set(work, value);
 }
 \end{lstlisting}
 \caption{Worklet for computing cell gradients in Dax Execution environment.}
@@ -781,7 +778,7 @@ __worklet__ void CellGradient(const daxWork work,
 \end{figure}
 
 Since the worklet code never directly accesses memory, the framework is free to
-optimize the fetches and write-backs to global memory under the covers, avoiding
+optimize the fetches and write-backs to global memory under the covers, at times avoiding
 global memory writes all together for intermediate results in the pipeline.
 Furthermore, the design isolates the worklet developers from changes to the
 underlying platform. For example, by simply providing a standard C++ based
@@ -790,14 +787,6 @@ executive to use a CPU thread scheduling
 mechanism\lcite{pthreads,OpenMP,TBB} we can port the entire framework a CPU
 multi-core platform.  We have high hopes of doing the same for future
 unknown systems.
-
-The annotations used in the arguments to the worklets serve two purposes.
-First, it enables the worklet developer to make certain assumptions about
-the arrays. For example, if an argument is marked as \emph{\_\_positions\_\_}, the
-array represents point coordinates with exactly 3 components.
-Second, it enables the control environment (as explained the section \ref{sec:ControlEnvironment}) to validate
-the pipeline, catching any invalid connections before the job is dispatched to
-the parallel platform.
 
 \begin{figure*}
   \centering

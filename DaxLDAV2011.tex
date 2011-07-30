@@ -594,7 +594,7 @@ to both environments.  These are placed in the \textC{dax} namespace.
 The dual programming environments is partially a convenience to isolate the
 application from the execution of the worklets and is partially a necessity to
 support GPU languages with host and device environments.  The Dax toolkit
-provides an object called an \keyterm{Executive} that acts as an interface
+provides an object called an \keyterm{Executive} (\textC{dax::cont::Executive}) that acts as an interface
 between the control and execution environment.  The executive accepts mesh data
 and execution requests from the application running in the control environment.
 Based on these requests, the executive builds worklet pipelines, manages memory,
@@ -855,15 +855,16 @@ int vtkCellDerivatives::RequestData(...)
 \label{sec:ControlEnvironment}
 
 The control environment can be considered as the scaffolding interface that helps set up the
-visualization pipeline. Each worklet gets wrapped into a module (daxModule),
-with each array argument to the worklet becoming an input or an output port for
-the module. A pipeline is constructed by connecting the output ports to input
+visualization pipeline. Each worklet gets wrapped into a module (\textC{dax::cont::Module}),
+with each field argument to the worklet becoming an input or an output port for
+the module. A pipeline is constructed by connecting the output ports of a module to input
 ports on different modules. To execute the pipeline, one calls
-Executive::Execute(). That results in first validating the pipeline to ensure
+\textC{dax::cont::Executive::Execute()}. That results in first validating the pipeline to ensure
 that input port requirements are met. Second, a CUDA kernel is generated that
 executes the entire pipeline on a datum. Finally, the data arrays are
 uploaded to the device memory and the CUDA kernel is triggered.
 
+\fix{This description is incorrect.  Please fix.}
 The execution of the worklets in the pipeline is demand driven. That is, it is
 triggered by calling the last worklet in the pipeline. The framework maintains
 the information of how each intermediate array is to be generated. When a

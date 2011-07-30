@@ -761,9 +761,9 @@ DAX_WORKLET void CellGradient(
     DAX_IN dax::exec::FieldPoint& point_attribute,
     DAX_OUT dax::exec::FieldCell& cell_attribute)
 {
+  dax::exec::Cell cell(work);
   dax::Vector3 parametric_cell_center
     = dax::make_Vector3(0.5, 0.5, 0.5);
-  dax::exec::Cell cell(work);
  
   dax::Vector3 value = cell.Derivative(
     parametric_cell_center,
@@ -791,32 +791,6 @@ unknown systems.
 \begin{figure*}
   \centering
   \begin{minipage}[t]{.49\linewidth}
-    \begin{lstlisting}[language=Dax]
-__worklet__ void CellGradient(...)
-{
-  daxFloat3 parametric_cell_center =
-    (daxFloat3)(0.5, 0.5, 0.5);
-
-
-
-  daxConnectedComponent cell;
-  daxGetConnectedComponent(work, in_connections, &cell);
-  daxFloat scalars[MAX_CELL_POINTS];
-  uint num_elements = daxGetNumberOfElements(&cell);
-  daxWork point_work;
-  for (uint cc=0; cc < num_elements; cc++)
-    {
-    point_work = daxGetWorkForElement(&cell, cc);
-    scalars[cc]
-      = daxGetArrayValue(point_work, inputArray);
-    }
-  daxFloat3 gradient = daxGetCellDerivative(&cell,
-    0, parametric_cell_center, scalars);
-  daxSetArrayValue3(work, outputArray, gradient);
-}
-    \end{lstlisting}
-  \end{minipage}
-  \begin{minipage}[t]{.49\linewidth}
     \begin{lstlisting}[language=C++]
 int vtkCellDerivatives::RequestData(...)
 {
@@ -824,30 +798,54 @@ int vtkCellDerivatives::RequestData(...)
   ...[validate inputs]...
   for (cellId=0; cellId < numCells; cellId++)
     {
-    ...
+    ...[update progress]...
     input->GetCell(cellId, cell);
     subId = cell->GetParametricCenter(pcoords);
+
     inScalars->GetTuples(cell->PointIds, cellScalars);
     scalars = cellScalars->GetPointer(0);
-
-
-
-
-
-
-
-    cell->Derivatives(subId,pcoords,scalars,1,derivs);
-
+    cell->Derivatives(
+     subId,
+     pcoords,
+     scalars,
+     1,
+     derivs);
     outGradients->SetTuple(cellId, derivs);
     }
   ...[cleanup]...
 }
     \end{lstlisting}
   \end{minipage}
-  \caption{Comparison of code to compute call gradients in Dax (repeated
-    from Figure~\ref{fig:DaxCellGradientWorklet}) on the left and the
-    equivalent code in VTK (from the vtkCellDerivatives class) on the
-    right.}
+  \begin{minipage}[t]{.49\linewidth}
+    \begin{lstlisting}[language=Dax]
+DAX_WORKLET void CellGradient(...)
+{
+
+
+
+
+
+  dax::exec::Cell cell(work);
+  dax::Vector3 parametric_cell_center
+    = dax::make_Vector3(0.5, 0.5, 0.5);
+ 
+
+  dax::Vector3 value = cell.Derivative(
+    parametric_cell_center,
+    points,
+    point_attribute,
+    0);
+
+  cell_attribute.Set(work, value);
+
+
+}
+    \end{lstlisting}
+  \end{minipage}
+  \caption{Comparison of the VTK code (from the \textC{vtkCellDerivatives}
+    class) to compute gradients on the right to the code to compute
+    gradients in Dax (repeated from
+    Figure~\ref{fig:DaxCellGradientWorklet}) on the right.}
   \label{fig:DaxVTKCompare}
 \end{figure*}
 
@@ -868,14 +866,14 @@ uploaded to the device memory and the CUDA kernel is triggered.
 The execution of the worklets in the pipeline is demand driven. That is, it is
 triggered by calling the last worklet in the pipeline. The framework maintains
 the information of how each intermediate array is to be generated. When a
-worklet makes a daxGetArrayValue\textasteriskcentered~function call, it checks
+worklet makes a \textC{daxGetArrayValue\asterisk} function call, it checks
 if the value has been computed or available in global memory. If not, it
 executes the source-worklet to produce the value implicitly. Likewise,
-daxSetArrayValue\textasteriskcentered~function calls don't necessarily result
+\textC{daxSetArrayValue\asterisk} function calls don't necessarily result
 in a global memory write. If the array being written to an intermediate result
 i.e. result being passed from one worklet to another, then the value gets
 written in local memory and returned by the
-daxGetArrayValue\textasteriskcentered~ call that triggered the execution of the
+\textC{daxGetArrayValue\asterisk} call that triggered the execution of the
 worklet. All this is happening under the covers without the worklet having to
 worry about any of these optimizations.
 
@@ -903,17 +901,19 @@ implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
   \label{tab:Results}
   \vspace{6pt}
   \begin{tabular}{llrrr}
-    \multicolumn{2}{l}{Pipeline/Mesh Size} & VTK Time & Dax Time & Speedup \\
+    \qquad & Mesh Size & VTK Time & Dax Time & Speedup \\
     \hline
     \multicolumn{5}{l}{Elevation $\rightarrow$ Gradient} \\
-    \qquad
-    & $144^3$ & 2.75 s & 0.02 (0.03) s & 138 (92) \\
-    & $256^3$ &  15.52 s & 0.11 (0.19) s & 141 (82) \\
-    & $512^3$ &  125.75 s & 0.89 (1.57) s &  141 (80) \\
-    %% \multicolumn{5}{l}{Elevation $\rightarrow$ Gradient $\rightarrow$ Point Data to Cell Data} \\
-    %% & $144^3$ & 4.21 s & 0.18 (0.20) s &  23 (21) \\
-    %% & $256^3$ &  23.76 s & 1.03 (1.11) s & 23 (21) \\
-    %% & $512^3$ & 161.23 s & 8.24 (8.87) s &  20 (18) \\
+    %% & $144^3$ & 2.75 s & 0.02 (0.03) s & 138 (92) \\
+    %% & $256^3$ &  15.52 s & 0.11 (0.19) s & 141 (82) \\
+    %% & $512^3$ &  125.75 s & 0.89 (1.57) s &  141 (80) \\
+    & $144^3$ & 2.75 s & 0.013 (0.024) s & 210 (114) \\
+    & $256^3$ &  15.52 s & 0.074 (0.135) s & 210 (115) \\
+    & $512^3$ &  125.75 s & 0.589 (1.076) s &  213 (117) \\
+    \multicolumn{5}{l}{\fix{The following are out of date!}}\\
+    \multicolumn{5}{l}{\fix{The CUDA runs were for}}\\
+    \multicolumn{5}{l}{\fix{\quad Gradient $\rightarrow$ Sine $\rightarrow$ Square $\rightarrow$ Cosine}}\\
+    \multicolumn{5}{l}{\fix{This is the wrong pipeline and non-comparable}}\\
     \multicolumn{5}{l}{Elevation $\rightarrow$ Sine $\rightarrow$ Square $\rightarrow$ Cosine} \\
     & $144^3$ & 2.32 s & 0.01 (0.02) s &  231 (115) \\
     & $256^3$ &  12.99 s & 0.05 (0.09) s & 259 (144) \\
@@ -965,8 +965,7 @@ such as VTK. Figure~\ref{fig:DaxVTKCompare} compares the code used in Dax
 to compute cell gradients and a code snippet for computing cell gradients
 in VTK's vtkCellDerivatives filter.  This comparison clearly shows that,
 apart from minor syntactic differences, the code for the two is nearly
-identical (although Dax is currently missing a convenience function for
-getting all scalars in a cell that is available in VTK).
+identical.
 
 \section{Challenges Ahead}
 \label{sec:Challenges}
@@ -981,7 +980,7 @@ discussed. The unique characteristic of such algorithms is that they cannot
 determine the number of elements a priori. Unlike traditional filters, a
 worklet has no explicit memory management or control capabilities. Using the
 information provided by the annotations, the executive deduces the memory
-requirements and allocates appropriate buffers. Since that's no longer possible
+requirements and allocates appropriate buffers. Since that is no longer possible
 for topology changing algorithms, it becomes essential that such worklets are
 split into at least two components: one computing the number of elements being
 generated and the second doing the actual work to generate the new elements. The
@@ -993,11 +992,16 @@ Another challenge is inter-worklet communication. Certain visualization
 algorithms are not amenable to being parallelized without extensive 
 communication e.g. streamline generation. Although theoretically it is possible
 for worklets to communicate with each other using explicit synchronization
-mechanisms it can affect the performance drastically. As framework designers, we
+mechanisms, it can affect the performance drastically. As framework designers, we
 either have to bite the bullet and support such algorithms or provide
-alternatives. For example, although streamline tracing is not easily parallelizable,
-line integral convolution~\lcite{SurfaceLIC} can be suggested as parallel
-alternative for analyzing vector fields.
+alternatives.  For example, streamlines could potentially be supported by
+allowing worklets that are scheduled by seed point rather than by
+topology.  Such a threading would require the fast creation of a lookup
+structure to get cell information for the current location of the stream
+head.  However, the ultimate nature of these massively multithreaded
+systems may force all visualization developers, regardless of framework, to
+favor alternate algorithms that perform more localized operations such as
+line integral convolution~\lcite{SurfaceLIC}.
 
 %% It is the visualization and data analysis programmer's responsibility to
 %% provide the implementation of a worklet, which describes the behavior of

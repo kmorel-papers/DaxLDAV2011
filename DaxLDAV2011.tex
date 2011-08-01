@@ -75,11 +75,11 @@
 %%      \parbox{1.4in}{\scriptsize \centering Martha Stewart Enterprises \\ Microsoft Research}}
 
 \author{
-  Utkarsh Ayachit\thanks{email: utkarsh.ayachit@kitware.com} \\ %
-  \scriptsize Kitware, Inc. %
-  \and %
   Kenneth Moreland\thanks{email: kmorel@sandia.gov} \\ %
   \scriptsize Sandia National Laboratories %
+  \and %
+  Utkarsh Ayachit\thanks{email: utkarsh.ayachit@kitware.com} \\ %
+  \scriptsize Kitware, Inc. %
   \and %
   Berk Geveci\thanks{email: berk.geveci@kitware.com} \\ %
   \scriptsize Kitware, Inc. %
@@ -614,7 +614,7 @@ is demonstrated in Figure~\ref{fig:DaxDiagram}.
 \subsection{Data Model}
 \label{sec:DataModel}
 
-Regardless of how a data set is lain out in memory, the Dax API defines
+Regardless of how a data set is laid out in memory, the Dax API defines
 meshes using a vertex-cell model typical of visualization tools such as
 VTK\lcite{VTKBook}.  Each mesh contains a set of vertices with each vertex
 containing coordinates in $\mathds{R}^3$ space.  Cells are defined with a
@@ -713,12 +713,12 @@ fields. In addition to the classes previously mentioned, the Dax execution
 environment provides a modifier for the worklet function
 (\textC{DAX\_WORKLET}) and modifiers for the worklet arguments
 (\textC{DAX\_IN} and \textC{DAX\_OUT}) implemented as C macros.  The
-purpose of these modifies is twofold.  First, they provide the ability to
+purpose of these modifiers is twofold.  First, they provide the ability to
 add language specific modifiers such as \textC{\_\_device\_\_} for CUDA.
 Second, they, in conjunction with the data types, help a simple parser to
 find the worklet function and identify the purpose of the arguments and
 allow the control environment to validate the pipeline, catching any
-invalid connections before the job is dispatch to the parallel platform.
+invalid connections before the job is dispatched to the parallel platform.
 
 As an example, the following code shows the prototype for a worklet that
 takes in a position coordinate and point scalar to produce a new point
@@ -862,20 +862,15 @@ that input port requirements are met. Second, a CUDA kernel is generated that
 executes the entire pipeline on a datum. Finally, the data arrays are
 uploaded to the device memory and the CUDA kernel is triggered.
 
-\fix{This description is incorrect.  Please fix.}
-The execution of the worklets in the pipeline is demand driven. That is, it is
-triggered by calling the last worklet in the pipeline. The framework maintains
-the information of how each intermediate array is to be generated. When a
-worklet makes a \textC{daxGetArrayValue\asterisk} function call, it checks
-if the value has been computed or available in global memory. If not, it
-executes the source-worklet to produce the value implicitly. Likewise,
-\textC{daxSetArrayValue\asterisk} function calls don't necessarily result
-in a global memory write. If the array being written to an intermediate result
-i.e. result being passed from one worklet to another, then the value gets
-written in local memory and returned by the
-\textC{daxGetArrayValue\asterisk} call that triggered the execution of the
-worklet. All this is happening under the covers without the worklet having to
-worry about any of these optimizations.
+Depending on the nature of the pipeline, one or more CUDA kernels are triggered.
+The executive constructs a DAG based on the dependencies among the modules. This
+helps in scheduling worklets.  Worklets processing field arrays can be combined
+into a single kernel, for example, while worklets that change field topology types e.g.
+processing point scalars to cell scalars/vectors need to be invoked in a separate
+kernel after the kernel producing the point scalars, if any. \fix{Can we make
+some statement that there are various approaches to task scheduling that are
+being researched such as hyperflow and those can be easily integrated into
+this stage?}
 
 %% Our current implementations don't store any intermediate values. Consequently if
 %% a worklet access the same input array location twice, then the producer worklet
@@ -888,7 +883,7 @@ worry about any of these optimizations.
 
 Table \ref{tab:Results} compares the execution times for a couple of simple
 pipelines Elevation $\rightarrow$ Cell Gradient and Elevation $\rightarrow$
-Cell Gradient $\rightarrow$ Cell Data To Point Data applied to $144^3$, $256^3$
+Sine $\rightarrow$ Square $\rightarrow$ Cosine applied to $144^3$, $256^3$
 and $512^3$ blocks of 3D uniform
 rectilinear grid using NVIDIA Tesla C2050 against a serial VTK-based
 implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
@@ -910,14 +905,10 @@ implementation of the same pipeline on a Intel Xeon 3.00 GHz CPU.
     & $144^3$ & 2.75 s & 0.013 (0.024) s & 210 (114) \\
     & $256^3$ &  15.52 s & 0.074 (0.135) s & 210 (115) \\
     & $512^3$ &  125.75 s & 0.589 (1.076) s &  213 (117) \\
-    \multicolumn{5}{l}{\fix{The following are out of date!}}\\
-    \multicolumn{5}{l}{\fix{The CUDA runs were for}}\\
-    \multicolumn{5}{l}{\fix{\quad Gradient $\rightarrow$ Sine $\rightarrow$ Square $\rightarrow$ Cosine}}\\
-    \multicolumn{5}{l}{\fix{This is the wrong pipeline and non-comparable}}\\
     \multicolumn{5}{l}{Elevation $\rightarrow$ Sine $\rightarrow$ Square $\rightarrow$ Cosine} \\
-    & $144^3$ & 2.32 s & 0.01 (0.02) s &  231 (115) \\
-    & $256^3$ &  12.99 s & 0.05 (0.09) s & 259 (144) \\
-    & $512^3$ & 103.88 s & 0.44 (0.65) s &  236 (159) \\
+    & $144^3$ & 2.32 s & 0.002 (0.006) s &  1169 (386) \\
+    & $256^3$ &  12.99 s & 0.013 (0.034) s & 999 (382) \\
+    & $512^3$ & 103.88 s & 0.110 (0.276) s &  944 (376) \\
   \end{tabular}
 \end{table}
 

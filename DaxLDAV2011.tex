@@ -263,7 +263,7 @@ advantage of GPU accelerators.
   \centering
   \includegraphics[width=2.5in]{images/DaxPipelineVsTraditionalPipeline}
   \caption{Comparison between traditional visualization pipeline execution
-    and Dax pipeline execution. Dax makes it possible to achieve higher
+    and Dax pipeline execution. Dax makes it possible to achieve a higher
     degree of concurrency by moving the iteration over mesh elements out of
     the algorithm and letting the framework manage the parallelism.}
   \label{fig:DaxPipelineVsTraditionalPipeline}
@@ -305,7 +305,7 @@ types of frameworks, including Dax.
 
 Another recent research project extends the visualization-pipeline
 streaming mechanism by automatically orchestrating task concurrency in
-independent components of the pipeline\lcite{Vo09}.  The technique adapts
+independent components of the pipeline\lcite{Vo10,VoPhD}.  The technique adapts
 the visualization pipeline to multi-core processors, but it has its
 limitations.  There is a high overhead with regard to each execution thread
 created; they require isolated buffers of memory for input and output and
@@ -864,13 +864,14 @@ uploaded to the device memory and the CUDA kernel is triggered.
 
 Depending on the nature of the pipeline, one or more CUDA kernels are triggered.
 The executive constructs a DAG based on the dependencies among the modules. This
-helps in scheduling worklets.  Worklets processing field arrays can be combined
-into a single kernel, for example, while worklets that change field topology types e.g.
-processing point scalars to cell scalars/vectors need to be invoked in a separate
-kernel after the kernel producing the point scalars, if any. \fix{Can we make
-some statement that there are various approaches to task scheduling that are
-being researched such as hyperflow and those can be easily integrated into
-this stage?}
+helps in scheduling worklets.  When possible worklets are combined into a
+single kernel invocation.  For example, worklets processing field arrays
+can be composed together on field elements.  However, successive worklets may
+require differing memory access patterns and sharing of computed values.
+To prevent duplicated reads and computation, the worklets are executed in
+separate kernel invocations.  In this regard, the current implementation of
+workflow is simplistic.  In the future we hope to leverage the ongoing work
+in dataflow architectures such as Hyperflow\lcite{VoPhD}.
 
 %% Our current implementations don't store any intermediate values. Consequently if
 %% a worklet access the same input array location twice, then the producer worklet

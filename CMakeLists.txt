@@ -12,4 +12,10 @@ set(images
 add_latex_document(DaxLDAV2011.tex
   BIBFILES DaxLDAV2011.bib
   IMAGES ${images}
+  MANGLE_TARGET_NAMES
+  )
+
+add_latex_document(DaxLDAV2011Presentation.tex
+  IMAGES ${images}
+  MANGLE_TARGET_NAMES
   )

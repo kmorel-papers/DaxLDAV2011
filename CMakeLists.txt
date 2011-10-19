@@ -9,6 +9,9 @@ set(images
   images/DaxPipelineVsTraditionalPipeline.pdf
   images/SimplePipeline.pdf
   images/ParallelVisPipeline.pdf
+  images/SingleElementFilter.pdf
+  images/worklet.pdf
+  images/many_worklets.pdf
   )
 
 add_latex_document(DaxLDAV2011.tex

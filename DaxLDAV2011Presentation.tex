@@ -20,10 +20,13 @@
 %Kwan-Liu Ma}
 \date {October 24, 2011}
 
+\setbeamertemplate{footline}{}
+\setbeamertemplate{navigation symbols}{}
+
 \begin{document}
 \frame{\titlepage}
 
-\section{Introduction}
+%\section{Introduction}
 
 \frame
 {
@@ -56,6 +59,12 @@
 
 \frame
 {
+  \frametitle{Our approach}
+  Brief overview of our approach.
+}
+
+\frame
+{
   \frametitle{Existing Approaches}
   Summarize existing approaches and contrast with our proposal.
 }
@@ -71,7 +80,86 @@
 \frame
 {
   \frametitle{Data Model}
+  Describe dax::exec::Work and dax::exec::Field.
 }
 
+\frame
+{
+  \frametitle{Dax Programming Environments}
+  \begin{itemize}
+  \item Execution Environment
+  \item Control Environment
+  \end{itemize}
+}
+
+\subsection{Execution Environment}
+\frame
+{
+  \frametitle{Execution Environment}
+  One or two sample worklets describing how the execution environment works.
+}
+
+\subsection{Control Environment}
+\frame
+{
+  \frametitle{Control Environment}
+  Example of how the control environment looks.
+}
+
+\section{Results}
+
+\frame
+{
+  \frametitle{Code Comparison}
+  Compare Cell-Derivatives code.
+}
+
+\frame
+{
+  \frametitle{Performance Comparison}
+  \begin{table}[htbp]
+    \centering
+    \label{tab:Results}
+    %\vspace{6pt}
+    \begin{tabular}{llrrr}
+      \qquad & Mesh Size & VTK Time & Dax Time & Speedup \\
+      \hline
+      \multicolumn{5}{l}{Elevation $\rightarrow$ Gradient} \\
+      %% & $144^3$ & 2.75 s & 0.02 (0.03) s & 138 (92) \\
+      %% & $256^3$ &  15.52 s & 0.11 (0.19) s & 141 (82) \\
+      %% & $512^3$ &  125.75 s & 0.89 (1.57) s &  141 (80) \\
+      & $144^3$ & 2.75 s & 0.013 (0.024) s & 210 (114) \\
+      & $256^3$ &  15.52 s & 0.074 (0.135) s & 210 (115) \\
+      & $512^3$ &  125.75 s & 0.589 (1.076) s &  213 (117) \\
+      \multicolumn{5}{l}{Elevation $\rightarrow$ Sine $\rightarrow$ Square $\rightarrow$ Cosine} \\
+      & $144^3$ & 2.32 s & 0.002 (0.006) s &  1169 (386) \\
+      & $256^3$ &  12.99 s & 0.013 (0.034) s & 999 (382) \\
+      & $512^3$ & 103.88 s & 0.110 (0.276) s &  944 (376) \\
+    \end{tabular} 
+  \end{table}
+  {Performance comparison between Dax toolkit and VTK. Values in
+  parentheses show the corresponding values with data transfer times
+  included}.
+}
+
+\frame
+{
+  \frametitle{Ongoing Work}
+  Summarize the challenges ahead and some of the ongoing work.
+}
+
+\frame
+{
+  \frametitle{Conclusion}
+  Dax Toolkit
+}
+
+\frame
+{
+  \frametitle{Acknowledgements}
+  This work was supported in full by the DOE Office of Science, Advanced
+  Scientific Computing Research, under award number 10-014707, program manager
+  Lucy Nowell.
+}
 
 \end{document}

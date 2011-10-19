@@ -1,5 +1,5 @@
-\documentclass{beamer}
-%\documentclass[brown]{beamer}
+%\documentclass{beamer}
+\documentclass[brown]{beamer}
 \usepackage{beamerthemesplit}
 %\usepackage{beamerthemeshadow}
 %\usetheme{default} 
@@ -38,13 +38,13 @@
 \newcommand*{\textC}[1]{\texttt{#1}}
 
 \title{\textbf{Dax Toolkit}: \\
-  A Proposed Framework framework for Data Analysis and Visualization \\
+  A Proposed Framework for Data Analysis and Visualization \\
   at Extreme Scale}
 
 \author{\small
   Kenneth Moreland {\tiny Sandia National Laboratories} \\
-  \textbf{Utkarsh Ayachit} {\tiny Kitware Inc. } \\
-  Berk Geveci {\tiny Kitware Inc. }\\
+  \textbf{Utkarsh Ayachit} {\tiny Kitware, Inc. } \\
+  Berk Geveci {\tiny Kitware, Inc. }\\
   Kwan-Liu Ma {\tiny University of California at Davis}
 }
 %\author{Kenneth Moreland \\
@@ -60,6 +60,7 @@
 \frame{\titlepage}
 
 %\section{Introduction}
+\section{Motivation}
 
 \frame
 {
@@ -73,21 +74,45 @@
 \frame
 {
   \frametitle{Visualization Pipeline}
-  Talk about the visualization pipeline.
+  % Talk about the visualization pipeline.
+  \begin{figure}
+  \centering
+  \includegraphics[width=.8\textwidth]{images/SimplePipeline.pdf}
+  \end{figure}
 }
 
 \frame
 {
   \frametitle{Parallel Visualization Pipeline}
-  Talk about how VTK/ParaView/VisIt deal with parallelism.
+  %Talk about how VTK/ParaView/VisIt deal with parallelism.
+  \begin{figure}
+  \centering
+  \includegraphics[width=.8\textwidth]{images/ParallelVisPipeline.pdf}
+  \end{figure}
 }
 
-\section{Motivation}
 
 \frame
 {
-  \frametitle{Understanding the Beast}
-  Let's understand the nature of the machine we're dealing with here.
+  \frametitle{Petascale To Exascale\footnote[1]{Estimates consolidated from International
+  Exascale Software Project Roadmap and the DOE Exascale Initiative Roadmap.}}
+  \renewcommand{\arraystretch}{1.5}
+  \begin{table}[htbp]
+    \centering
+    \begin{tabular}{l|l|l|l}
+      & Jaguar -- XT5 & Exascale & Increase \\
+      \hline
+      Cores & 224,256
+      & 100 million -- 1 billion
+      & 400 -- 5,000$\times$ \\
+      Threads & 224,256 way
+      & 1 -- 10 billion way
+      & 4,000 -- 50,000$\times$ \\
+      Memory & 300 Terabytes
+      & 10 -- 128  Petabytes
+      & 30 -- 500$\times$
+    \end{tabular}
+  \end{table}
 }
 
 \frame
@@ -119,10 +144,10 @@
 \frame
 {
   \frametitle{Dax Programming Environments}
-  \begin{itemize}
-  \item Execution Environment
-  \item Control Environment
-  \end{itemize}
+  \begin{figure}[htbp]
+    \centering
+    \includegraphics{images/DaxDiagram}
+  \end{figure}
 }
 
 \subsection{Execution Environment}

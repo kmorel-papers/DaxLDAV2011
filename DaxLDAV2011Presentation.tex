@@ -4,6 +4,39 @@
 %\usepackage{beamerthemeshadow}
 %\usetheme{default} 
 
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{dsfont}
+\usepackage{graphicx}
+\usepackage{varioref}
+
+\usepackage{color}
+\definecolor{yellow}{rgb}{1,1,0}
+\definecolor{black}{rgb}{0,0,0}
+\definecolor{ltcyan}{rgb}{.75,1,1}
+\definecolor{blue}{rgb}{0,0,1}
+\definecolor{red}{rgb}{1,0,0}
+\definecolor{darkred}{rgb}{0.5,0,0}
+\definecolor{darkgreen}{rgb}{0,0.5,0}
+
+\usepackage{listings}
+\lstloadlanguages{C,C++}
+\lstset{fontadjust=false,basicstyle=\small\ttfamily}
+\lstset{language=C}
+\lstdefinelanguage{Dax}{
+  morekeywords={WorkMapField,WorkMapCell,Cell,Field,FieldCell,FieldPoint,FieldCoordinates,Scalar,Vector3,Vector4},
+  morekeywords={[2]dax,exec,comp},
+  morekeywords={[3]DAX_WORKLET,DAX_IN,DAX_OUT}
+}
+\lstset{
+  keywordstyle=\color{blue},
+  keywordstyle=[2]\color{darkred},
+  keywordstyle=[3]\color{darkgreen}
+}
+
+\newcommand*{\textC}[1]{\texttt{#1}}
+
 \title{\textbf{Dax Toolkit}: \\
   A Proposed Framework framework for Data Analysis and Visualization \\
   at Extreme Scale}
@@ -21,7 +54,7 @@
 \date {October 24, 2011}
 
 \setbeamertemplate{footline}{}
-\setbeamertemplate{navigation symbols}{}
+\beamertemplatenavigationsymbolsempty
 
 \begin{document}
 \frame{\titlepage}
@@ -111,7 +144,7 @@
 \frame
 {
   \frametitle{Code Comparison}
-  Compare Cell-Derivatives code.
+  Compare cell-derivatives code.
 }
 
 \frame

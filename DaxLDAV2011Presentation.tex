@@ -220,6 +220,7 @@
 {
   \frametitle{Implementation Assumptions}
   \begin{itemize}
+  \addtolength{\itemsep}{2\baselineskip}
   \item GPU $\approx$ Exascale Node
   \item CUDA $\approx$ Development Environment on Exascale Node
   \end{itemize}
@@ -379,14 +380,22 @@ DAX_WORKLET void CellGradient(...)
 
 \frame
 {
-  \frametitle{Ongoing Work}
-  Summarize the challenges ahead and some of the ongoing work.
+  \frametitle{Challenges and Ongoing Work}
+  \begin{itemize}
+  \addtolength{\itemsep}{2\baselineskip}
+  \item Topology modifying Worklets e.g. Marching Cubes/Streamlines
+  \item Communication between Worklets
+  \item I/O and Rendering
+  \end{itemize}
 }
 
 \frame
 {
   \frametitle{Conclusion}
-  Dax Toolkit
+  \begin{figure}
+  \centering
+  \includegraphics[width=.5\textwidth]{images/DaxPipelineVsTraditionalPipeline.pdf}
+  \end{figure}
 }
 
 \frame

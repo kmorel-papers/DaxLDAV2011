@@ -26,7 +26,7 @@
 \lstset{language=C}
 \lstdefinelanguage{Dax}{
   morekeywords={WorkMapField,WorkMapCell,Cell,Field,FieldCell,FieldPoint,FieldCoordinates,Scalar,Vector3,Vector4},
-  morekeywords={[2]dax,exec,comp},
+  morekeywords={[2]dax,exec,comp,void},
   morekeywords={[3]DAX_WORKLET,DAX_IN,DAX_OUT}
 }
 \lstset{
@@ -36,10 +36,28 @@
 }
 
 \newcommand*{\textC}[1]{\texttt{#1}}
+\newcommand\mysection[1]{
+  \section{#1}
+  \begin{frame}
+    \begin{center}{\LARGE
+      #1
+      }
+    \end{center}
+  \end{frame}
+}
+
+% removes the mark from footnote.
+\let\thefootnote\relax\footnotetext{Footnotetext without footnote mark} 
 
 \title{\textbf{Dax Toolkit}: \\
-  A Proposed Framework for Data Analysis and Visualization \\
-  at Extreme Scale}
+  A Proposed Framework for Data Analysis \\
+  and Visualization at Extreme Scale\footnote
+    {
+  This work was supported in full by the DOE Office of Science, Advanced
+  Scientific Computing Research, under award number 10-014707, program manager
+  Lucy Nowell.
+    }
+}
 
 \author{\small
   Kenneth Moreland {\tiny Sandia National Laboratories} \\
@@ -69,7 +87,7 @@
   \end{beamerboxesrounded}
 }
 
-\section{Motivation}
+\mysection{Motivation}
 \subsection{Background}
 
 \frame
@@ -129,7 +147,8 @@
 \frame
 {
   \begin{center}
-  function (\emph{in}, \emph{out})
+  {\ttfamily
+  function (\emph{in}, \emph{out})}
   \end{center}
 }
 
@@ -194,7 +213,8 @@
   \end{itemize}
 }
 
-\section{Dax Toolkit}
+\mysection{Dax Toolkit}
+\subsection{Overview}
 
 \frame
 {
@@ -207,25 +227,59 @@
 
 \frame
 {
-  \frametitle{Data Model}
-  Describe dax::exec::Work and dax::exec::Field.
-}
-
-\frame
-{
-  \frametitle{Dax Programming Environments}
+  \frametitle{Dax Programming Environment}
   \begin{figure}[htbp]
     \centering
-    \includegraphics{images/DaxDiagram}
+    \includegraphics[width=.6\textwidth]{images/DaxDiagram}
   \end{figure}
 }
 
+\begin{frame}[fragile]
+\frametitle{Data Model}
+
+\begin{itemize}
+\item %
+\begin{lstlisting}[language=Dax]
+dax::exec::Work
+\end{lstlisting} %
+
+Corresponds to \emph{work} performed by each Worklet. %
+\begin{lstlisting}[language=Dax]
+dax::exec::WorkMapField
+dax::exec::WorkMapCell
+\end{lstlisting}
+
+\item %
+\begin{lstlisting}[language=Dax]
+dax::exec::Field
+\end{lstlisting}%
+
+Provides access to data arrays. %
+\begin{lstlisting}[language=Dax]
+dax::exec::Field
+dax::exec::FieldCell
+dax::exec::FieldPoint
+dax::exec::FieldCoordinates
+\end{lstlisting}
+\end{itemize}
+\end{frame}
+
+
 \subsection{Execution Environment}
-\frame
+\begin{frame}[fragile]
+\frametitle{Execution Environment}
+\begin{lstlisting}[language=Dax]
+DAX_WORKLET void FieldWorklet(
+    DAX_IN dax::exec::WorkMapField& work,
+    DAX_IN dax::exec::Field& in_field,
+    DAX_OUT dax::exec::Field& out_field)
 {
-  \frametitle{Execution Environment}
-  One or two sample worklets describing how the execution environment works.
+  dax::Scalar in_value = in_field.GetScalar(work);
+  dax::Scalar out_value = ...;
+  out_field.Set(work, out_value);
 }
+\end{lstlisting}
+\end{frame}
 
 \subsection{Control Environment}
 \frame
@@ -234,13 +288,66 @@
   Example of how the control environment looks.
 }
 
-\section{Results}
+\mysection{Results}
 
-\frame
+\begin{frame}[fragile]
+\frametitle{Code Comparison}
+\begin{columns}[l]
+\column{.49\linewidth}
+\begin{lstlisting}[language=C++,basicstyle=\tiny\ttfamily]
+int vtkCellDerivatives::RequestData(...)
 {
-  \frametitle{Code Comparison}
-  Compare cell-derivatives code.
+  ...[allocate output arrays]...
+  ...[validate inputs]...
+  for (cellId=0; cellId < numCells; cellId++)
+    {
+    ...[update progress]...
+    input->GetCell(cellId, cell);
+    subId = cell->GetParametricCenter(
+                              pcoords);
+    inScalars->GetTuples(
+      cell->PointIds, cellScalars);
+    scalars = cellScalars->GetPointer(0);
+    cell->Derivatives(
+     subId,
+     pcoords,
+     scalars,
+     1,
+     derivs);
+    outGradients->SetTuple(cellId, derivs);
+    }
+  ...[cleanup]...
 }
+\end{lstlisting}
+
+\column{.49\linewidth}
+\begin{lstlisting}[language=Dax, basicstyle=\tiny\ttfamily]
+DAX_WORKLET void CellGradient(...)
+{
+
+
+
+
+
+  dax::exec::Cell cell(work);
+  dax::Vector3 parametric_cell_center
+    = dax::make_Vector3(0.5, 0.5, 0.5);
+ 
+
+  dax::Vector3 value = cell.Derivative(
+    parametric_cell_center,
+    points,
+    point_attribute,
+    0);
+
+
+  cell_attribute.Set(work, value);
+
+
+}
+\end{lstlisting}
+\end{columns}
+\end{frame}
 
 \frame
 {

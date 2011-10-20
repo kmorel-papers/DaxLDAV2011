@@ -151,7 +151,47 @@
 \frame
 {
   \frametitle{Existing Approaches}
-  Summarize existing approaches and contrast with our proposal.
+  Multicore extensions to VTK pipeline [Vo, et al. 2010]
+  % The stuff that Huy from Utah did with multicore.
+  \begin{itemize}
+  \item Pros: Can be applied to most existing VTK filters.
+  \item Cons: High overhead for each execution thread; VTK algorithms
+    optimized for sizeable chunks.
+  \end{itemize}
+  Functional field definitions (FEL/FM) [Bryson, et al. 1996]
+  % Fields are defined as functions, kind of like a the basic field map in
+  % Dax.  Berk knows more about it than I do.
+  \begin{itemize}
+  \item Pros: Mesh flexibility; low memory overhead; lazy evaluation;
+    straighforward to parallelize.
+  \item Cons: Does not manage massive multi-threading; no mechanism for
+    topology generation.
+  \end{itemize}
+  MapReduce [Dean and Ghemawat 2008] [Vo, et al. 2011]
+  % MapReduce is a database technology designed to do custom query like
+  % operations on large, irregular, sparse data sets.  To program in
+  % MapReduce, you provide to functions: a map and a reduce.  The map
+  % function is applied to every record in the database.  Looking at the
+  % one record, it produces key/value pairs.  The system collects the
+  % key/value pairs and groups all such pairs with the same key in a global
+  % shuffling operation.  Each group with the same key is then given to the
+  % reduce function, which produces output for that group.  Before you in
+  % the same session as your talk Huy should be presenting this.
+  %
+  % The first con is that the abstractions provided by MapReduce are
+  % principally for database queries.  It is difficult to cast
+  % visualization algorithms in the system.  It also throws away some
+  % a priori knowledge about the mesh.  The shuffling operation is global
+  % when in general it does not have to be.  Key matches could be
+  % restricted to known neighbors or within domain decompositions, but
+  % MapReduce does not know about that.
+  \begin{itemize}
+  \item Pros: simple programming model for massive parallelism; custom
+    systems specializing in large amounts of data.
+  \item Cons: Difficult to cast visualization algorithms; global shuffling
+    opeartion inefficient because it ignores known neighborhood or domain
+    decompositions.
+  \end{itemize}
 }
 
 \section{Dax Toolkit}

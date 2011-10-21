@@ -23,4 +23,5 @@ add_latex_document(DaxLDAV2011.tex
 add_latex_document(DaxLDAV2011Presentation.tex
   IMAGES ${images}
   MANGLE_TARGET_NAMES
+  DEPENDS dsfont.sty
   )

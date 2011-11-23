@@ -113,16 +113,16 @@
 }
 
 %% the following code has partly been adapted from egpubl.cls
-\newif\ifpdf  % determine if we are running PDFLaTeX or not
-\ifx\pdfoutput\undefined \pdffalse % we are not running PDFLaTeX 
+\newif\ifvgtcpdf  % determine if we are running PDFLaTeX or not
+\ifx\pdfoutput\undefined \vgtcpdffalse % we are not running PDFLaTeX 
 \else 
   %\pdfoutput=1 % we are running PDFLaTeX 
-  \pdftrue 
+  \vgtcpdftrue 
 \fi 
 
 \newcommand{\vgtcinsertpkg}{}
 \DeclareOption{electronic}{%
- \ifpdf 
+ \ifvgtcpdf 
   \renewcommand{\vgtcinsertpkg}{%
    \usepackage[pdftex,
     pagebackref=true,
